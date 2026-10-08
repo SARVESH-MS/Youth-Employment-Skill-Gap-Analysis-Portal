@@ -1,0 +1,31 @@
+{
+  "name": "youth-employment-skill-gap-analysis-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Youth Employment Skill Gap Analysis Portal — enterprise MERN platform for discovering IT career domains, analysing skill gaps, learning, practising, assessing, tracking progress and connecting with employment opportunities.",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm --workspace server run dev",
+    "dev:client": "npm --workspace client run dev",
+    "seed": "npm --workspace server run seed",
+    "seed:fresh": "npm --workspace server run seed:fresh",
+    "seed:references": "npm --workspace server run seed:references",
+    "seed:curriculum": "npm --workspace server run seed:curriculum",
+    "build": "npm --workspace client run build",
+    "start": "npm --workspace server run start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "overrides": {
+    "braces": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
