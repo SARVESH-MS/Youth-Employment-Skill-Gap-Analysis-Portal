@@ -17,6 +17,7 @@ const cookieOptions = (maxAge) => ({
 const serializeUser = (user) => {
   const value = user.toObject ? user.toObject() : { ...user };
   delete value.passwordHash;
+  delete value.googleId;
   return value;
 };
 

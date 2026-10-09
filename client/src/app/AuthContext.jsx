@@ -45,6 +45,13 @@ export function AuthProvider({ children }) {
     setUser(dataOf(response));
     return dataOf(response);
   }, [applySessionPolicy]);
+  const googleLogin = useCallback(async (credentials) => {
+    await ensureCsrf(true);
+    const response = await api.post('/auth/google', credentials);
+    applySessionPolicy(response);
+    setUser(dataOf(response));
+    return dataOf(response);
+  }, [applySessionPolicy]);
   const register = useCallback(async (role, values) => {
     await ensureCsrf(true);
     const response = await api.post(`/auth/register/${role}`, values);
@@ -73,7 +80,7 @@ export function AuthProvider({ children }) {
     };
   }, [user?._id, idleTimeoutMinutes, logout]);
 
-  const value = useMemo(() => ({ user, setUser, loading, login, register, logout, refreshUser, updateUser }), [user, loading, login, register, logout, refreshUser, updateUser]);
+  const value = useMemo(() => ({ user, setUser, loading, login, googleLogin, register, logout, refreshUser, updateUser }), [user, loading, login, googleLogin, register, logout, refreshUser, updateUser]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const { body, validationResult } = require('express-validator');
 const {
@@ -33,6 +34,7 @@ const companyOnly = [authenticate, requireRole('company'), requireApprovedCompan
 const adminOnly = [authenticate, requireRole('admin')];
 const candidateSummary = (user) => user.toPublicProfile();
 const skillProjection = 'name slug shortDescription category difficulty executionType supportedLanguages about';
+const compilerRateLimit = rateLimit({ windowMs: 60_000, limit: 12, standardHeaders: true, legacyHeaders: false });
 
 async function completeCodingRound(round, student, submission, score) {
   const application = round.application;
@@ -289,6 +291,61 @@ router.post('/student/practice/:questionId/submit', ...studentOnly, [body('selec
   const correct = req.body.selectedIndex === question.correctIndex;
   await recordActivity(req.user, 'practice-submitted', { skill: question.skill, entityType: 'PracticeQuestion', entityId: question._id, meta: { correct } });
   res.json({ success: true, data: { correct, correctIndex: question.correctIndex, explanation: question.solutionExplanation || question.expectedAnswer || '' } });
+}));
+
+router.post('/student/compiler/execute', ...studentOnly, compilerRateLimit, [
+  body('language').isIn(['javascript', 'python', 'java', 'c', 'cpp']),
+  body('sourceCode').isString().isLength({ max: env.compiler.maxSourceChars }),
+  body('stdin').optional().isString().isLength({ max: env.compiler.maxInputChars }),
+], validate, asyncHandler(async (req, res) => {
+  if (!env.compiler.runnerUrl) throw ApiError.unprocessable('The isolated compiler is not configured yet.');
+
+  const startedAt = Date.now();
+  const language = req.body.language;
+  const extension = { javascript: 'js', python: 'py', java: 'java', c: 'c', cpp: 'cpp' }[language];
+  const pistonLanguage = language === 'cpp' ? 'c++' : language;
+  let runnerResponse;
+  try {
+    runnerResponse = await fetch(env.compiler.runnerUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...(env.compiler.runnerToken ? { authorization: `Bearer ${env.compiler.runnerToken}` } : {}) },
+      body: JSON.stringify({
+        language: pistonLanguage,
+        version: '*',
+        files: [{ name: `main.${extension}`, content: req.body.sourceCode }],
+        stdin: req.body.stdin || '',
+        compile_timeout: Math.min(env.execution.timeoutMs * 2, 15_000),
+        run_timeout: Math.min(env.execution.timeoutMs, 5_000),
+        compile_cpu_time: Math.min(env.execution.cpuLimitSeconds * 1000 * 2, 15_000),
+        run_cpu_time: Math.min(env.execution.cpuLimitSeconds * 1000, 5_000),
+        compile_memory_limit: env.execution.memoryLimitMb * 1024 * 1024,
+        run_memory_limit: env.execution.memoryLimitMb * 1024 * 1024,
+      }),
+      signal: AbortSignal.timeout(env.compiler.timeoutMs),
+    });
+    if (!runnerResponse.ok) throw new Error(`Compiler returned ${runnerResponse.status}`);
+  } catch (error) {
+    const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
+    res.json({ success: true, data: { language, status: timedOut ? 'timeout' : 'unavailable', stdout: '', stderr: timedOut ? 'Execution timed out.' : 'The isolated compiler service is unavailable.', exitCode: -1, durationMs: Date.now() - startedAt } });
+    return;
+  }
+
+  let output;
+  try { output = await runnerResponse.json(); } catch { throw new ApiError(502, 'The isolated compiler returned an invalid response.'); }
+  const compile = output.compile || {};
+  const run = output.run || {};
+  const compileFailed = Boolean(output.compile && (compile.code !== 0 || compile.status));
+  const status = compileFailed ? 'compile_error' : run.status === 'TO' ? 'timeout' : run.status ? 'runtime_error' : run.code === 0 ? 'ok' : 'runtime_error';
+  const stderr = [compile.stderr, compile.message, run.stderr, run.message].filter(Boolean).join('\n').slice(0, env.compiler.maxOutputChars);
+  res.json({ success: true, data: {
+    language,
+    version: output.version || '',
+    status,
+    stdout: String(run.stdout || compile.stdout || '').slice(0, env.compiler.maxOutputChars),
+    stderr,
+    exitCode: Number.isInteger(run.code) ? run.code : Number.isInteger(compile.code) ? compile.code : -1,
+    durationMs: Date.now() - startedAt,
+  } });
 }));
 
 router.get('/student/coding/:skillId', ...studentOnly, asyncHandler(async (req, res) => {

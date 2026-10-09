@@ -63,6 +63,7 @@ const env = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     idleTimeoutMinutes: toInt(process.env.SESSION_IDLE_TIMEOUT_MINUTES, 30),
     saltRounds: toInt(process.env.BCRYPT_SALT_ROUNDS, 12),
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   },
 
   security: {
@@ -101,6 +102,15 @@ const env = {
     memoryLimitMb: toInt(process.env.EXECUTION_MEMORY_LIMIT_MB, 256),
     maxOutputChars: toInt(process.env.EXECUTION_MAX_OUTPUT_CHARS, 20000),
     tempDir: process.env.EXECUTION_TEMP_DIR || '.sandbox',
+  },
+
+  compiler: {
+    runnerUrl: process.env.COMPILER_SERVICE_URL || '',
+    runnerToken: process.env.COMPILER_SERVICE_TOKEN || '',
+    timeoutMs: toInt(process.env.COMPILER_TIMEOUT_MS, 15000),
+    maxSourceChars: toInt(process.env.COMPILER_MAX_SOURCE_CHARS, 60000),
+    maxInputChars: toInt(process.env.COMPILER_MAX_INPUT_CHARS, 10000),
+    maxOutputChars: toInt(process.env.COMPILER_MAX_OUTPUT_CHARS, 20000),
   },
 
   gemini: {
@@ -143,6 +153,7 @@ const assertProductionSafety = () => {
   if (env.execution.enabled && !env.execution.runnerUrl) problems.push('EXECUTION_SERVICE_URL must point to an isolated runner when code execution is enabled');
   if (env.execution.enabled && !env.execution.runnerToken) problems.push('EXECUTION_SERVICE_TOKEN must be set when code execution is enabled');
   if (env.execution.runnerUrl && !env.execution.runnerUrl.startsWith('https://')) problems.push('EXECUTION_SERVICE_URL must use HTTPS in production');
+  if (env.compiler.runnerUrl && !env.compiler.runnerUrl.startsWith('https://')) problems.push('COMPILER_SERVICE_URL must use HTTPS in production');
   if (problems.length) {
     throw new Error(`Unsafe production configuration:\n  - ${problems.join('\n  - ')}`);
   }

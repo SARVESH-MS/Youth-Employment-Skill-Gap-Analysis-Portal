@@ -64,6 +64,12 @@ The API sends a JSON `POST` with `sourceCode`, `language`, `executionType`, visi
 
 HTML/CSS preview uses a sandboxed browser iframe and is separate from server-side code execution.
 
+### Standalone compiler
+
+The student Code Lab is a freeform compiler: it has no challenge statement or hidden test cases. Students can write a program, provide optional standard input, and run it in JavaScript, Python, Java, C, or C++. Execution is proxied by the API to a self-hosted Piston-compatible endpoint; arbitrary code is never evaluated by the YESGAP web server. Configure `COMPILER_SERVICE_URL` with the runner's `/api/v2/execute` URL and optionally `COMPILER_SERVICE_TOKEN`. Set the time and input/output limits with the `COMPILER_*` variables in `.env.example`.
+
+The compiler runner is separate from the challenge runner above. It is not available until an isolated Piston instance is deployed and configured. Piston's public API now requires authorization, so use a self-hosted instance for development; its documented setup requires Docker and Linux isolation support. Install the language runtimes you want to offer on that instance before enabling the compiler. See the [Piston setup and API guide](https://github.com/engineer-man/piston#readme).
+
 ## Production configuration
 
 Create `server/.env` from `.env.example`, then set secure values for `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CSRF_SECRET`, the `INITIAL_ADMIN_*` bootstrap account, `CLIENT_URL`, and `CORS_ORIGIN`. Set `GEMINI_API_KEY` only if you want the assistant enabled. Generate secrets with a cryptographically secure random generator; use at least 32 characters. Set `NODE_ENV=production` and `SEED_DEMO_DATA=false`. Production startup rejects development secrets and demo seeding. Keep the API behind HTTPS and configure the frontend hosting origin in both `CLIENT_URL` and `CORS_ORIGIN`.

@@ -4,7 +4,10 @@ import { ArrowRight, ArrowUpRight, BookOpenCheck, BriefcaseBusiness, ChartNoAxes
 import { motion } from 'framer-motion';
 import api, { dataOf, errorMessage } from '../api/client';
 import { useAuth } from '../app/AuthContext';
+import BrandLogo from '../components/BrandLogo';
+import GoogleSignIn from '../components/GoogleSignIn';
 import { Field, FormInput, FormSelect, Loading } from '../components/Common';
+import ThemePicker from '../components/ThemePicker';
 
 const highlights = [
   { icon: ChartNoAxesCombined, title: 'Know your next step', text: 'See how your current skills line up with a career path and focus your time where it counts.' },
@@ -13,8 +16,13 @@ const highlights = [
 ];
 
 export function LandingPage() {
+  useEffect(() => {
+    document.documentElement.classList.add('landing-page-active');
+    return () => document.documentElement.classList.remove('landing-page-active');
+  }, []);
+
   return <main className="public-shell">
-    <nav className="public-nav"><Link to="/" className="brand"><span className="brand-mark">Y</span><span>YESGAP<small>YOUTH EMPLOYMENT</small></span></Link><div className="public-nav-links"><a href="#how-it-works">How it works</a><a href="#domains">Career paths</a><Link to="/login" className="nav-signin">Sign in</Link><Link to="/register/student" className="button button-primary button-small">Get started<ArrowRight size={15} /></Link></div><Link to="/login" className="mobile-signin">Sign in</Link></nav>
+    <nav className="public-nav"><BrandLogo className="landing-brand" /><div className="public-nav-links"><a href="#how-it-works">How it works</a><a href="#domains">Career paths</a><ThemePicker compact /><Link to="/login" className="nav-signin">Sign in</Link><Link to="/register/student" className="button button-primary button-small">Get started<ArrowRight size={15} /></Link></div><Link to="/login" className="mobile-signin">Sign in</Link></nav>
     <section className="hero-wrap">
       <div className="hero-copy"><div className="pill"><Sparkles size={14} />A clearer path into tech</div><h1>Build your skills.<br /><em>Find your next role.</em></h1><p className="hero-lede">A practical place to see what you know, learn what you need, and connect with teams looking for your potential.</p><div className="hero-actions"><Link to="/register/student" className="button button-primary button-large">Start your journey<ArrowRight size={17} /></Link><a href="#how-it-works" className="button button-quiet button-large">Explore the platform<ArrowUpRight size={17} /></a></div><div className="hero-proof"><div className="avatar-stack"><span>AS</span><span>RK</span><span>NP</span><span>+60</span></div><div><strong>Built for your next step</strong><small>Learn, show your progress, and grow with confidence.</small></div></div></div>
       <div className="hero-visual" aria-label="YESGAP skill progress dashboard illustration"><div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" /><div className="hero-window"><div className="hero-window-head"><span className="window-dots"><i /><i /><i /></span><span>My career readiness</span><span className="hero-live"><i /> LIVE</span></div><div className="hero-readiness"><div><span className="eyebrow">FULL STACK DEVELOPMENT</span><strong>72<small>%</small></strong><span className="readiness-change">↑ 8% this month</span></div><div className="readiness-ring"><div><strong>72</strong><small>READY</small></div></div></div><div className="hero-progress-card"><div className="mini-card-head"><span>Your skills</span><small>7 of 10 on track</small></div><div className="skill-line"><span><i className="skill-dot complete" /> HTML</span><b>Strong</b><div className="mini-meter"><i style={{ width: '100%' }} /></div></div><div className="skill-line"><span><i className="skill-dot complete" /> JavaScript</span><b>Strong</b><div className="mini-meter"><i style={{ width: '89%' }} /></div></div><div className="skill-line"><span><i className="skill-dot in-progress" /> React</span><b>In progress</b><div className="mini-meter"><i style={{ width: '52%' }} /></div></div><div className="skill-line"><span><i className="skill-dot missing" /> Node.js</span><b>Up next</b><div className="mini-meter"><i style={{ width: '18%' }} /></div></div></div><div className="hero-float-note"><div className="float-check"><Check size={15} /></div><span><strong>Nice work, Asha</strong><small>3 learning days in a row</small></span><span className="float-streak">✦ 3</span></div><div className="hero-spark spark-a">✦</div><div className="hero-spark spark-b">✧</div></div></div>
@@ -23,14 +31,14 @@ export function LandingPage() {
     <section className="section-pad landing-features" id="how-it-works"><div className="section-intro"><div className="eyebrow">A path that makes sense</div><h2>From “where do I start?”<br /><em>to “I’m ready.”</em></h2><p>Keep your learning connected to the roles you want, with a clear view of what is improving and what comes next.</p></div><div className="feature-grid">{highlights.map((item, index) => <motion.article className="feature-card" key={item.title} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }} transition={{ delay: index * 0.08 }}><div className={`feature-icon feature-icon-${index}`}><item.icon size={21} /></div><h3>{item.title}</h3><p>{item.text}</p><span className="feature-index">0{index + 1}</span></motion.article>)}</div></section>
     <section className="path-section" id="domains"><div className="path-art"><div className="path-blob"><Compass size={116} strokeWidth={1.1} /></div><span className="path-label label-left">Frontend</span><span className="path-label label-right">Cloud</span><span className="path-label label-bottom">Data & AI</span><div className="path-stamp">YOUR<br />PACE<span>↗</span></div></div><div className="path-copy"><div className="eyebrow">Room to grow</div><h2>A career path that starts <em>with you.</em></h2><p>Explore technology domains, understand the skills employers ask for, and build a roadmap that fits your current experience.</p><div className="path-list"><div><span>01</span><p><strong>Choose a direction</strong><small>See what different roles have in common.</small></p></div><div><span>02</span><p><strong>Learn in one place</strong><small>Keep lessons, practice, and progress together.</small></p></div><div><span>03</span><p><strong>Show your growth</strong><small>Share a clear, skill-based profile with employers.</small></p></div></div><Link className="text-link" to="/register/student">Explore career paths <ArrowRight size={16} /></Link></div></section>
     <section className="cta-section"><div><div className="eyebrow">Your next step can start today</div><h2>Make your potential<br /><em>visible.</em></h2><p>Build a steady, practical path from where you are to where you want to go.</p><Link className="button button-dark button-large" to="/register/student">Create your free profile<ArrowRight size={17} /></Link></div><div className="cta-decoration"><div className="cta-card cta-card-back">LEARNING PATH <span>↗</span><i /><i /><i /></div><div className="cta-card cta-card-front"><span className="cta-star">✦</span><small>YOUR NEXT SKILL</small><strong>React</strong><span className="cta-card-pill">Recommended</span></div><div className="cta-ring" /></div></section>
-    <footer className="public-footer"><Link to="/" className="brand"><span className="brand-mark">Y</span><span>YESGAP<small>YOUTH EMPLOYMENT</small></span></Link><p>Helping young people move forward in technology.</p><div><Link to="/register/company">For companies</Link><Link to="/login">Sign in</Link><span>© 2026 YESGAP</span></div></footer>
+    <footer className="public-footer"><BrandLogo className="landing-brand" /><p>Helping young people move forward in technology.</p><div><Link to="/register/company">For companies</Link><Link to="/login">Sign in</Link><span>© 2026 YESGAP</span></div></footer>
   </main>;
 }
 
 export function AuthPage({ mode = 'login' }) {
   const { role: routeRole } = useParams();
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, googleLogin, register } = useAuth();
   const [role, setRole] = useState(['student', 'company', 'admin'].includes(routeRole) ? routeRole : 'student');
   const [catalog, setCatalog] = useState({ domains: [], skills: [] });
   const [loadingCatalog, setLoadingCatalog] = useState(mode === 'register');
@@ -79,7 +87,16 @@ export function AuthPage({ mode = 'login' }) {
     finally { setBusy(false); }
   };
 
-  return <main className="auth-shell"><div className="auth-visual"><Link to="/" className="brand brand-on-dark"><span className="brand-mark">Y</span><span>YESGAP<small>YOUTH EMPLOYMENT</small></span></Link><div className="auth-visual-content"><div className="eyebrow">A practical path into technology</div><h1>Grow into the<br /><em>work you want.</em></h1><p>Build a skill plan that makes your next move easier to see.</p><div className="auth-quote-card"><span>“</span><p>Every project starts with one small step. Keep going, and your progress will speak for you.</p><small>THE YESGAP APPROACH</small></div></div><span className="auth-visual-foot">LEARN · PRACTICE · MOVE FORWARD</span><div className="auth-visual-shape" /></div><section className="auth-panel"><div className="auth-panel-top"><Link to="/" className="brand mobile-brand"><span className="brand-mark">Y</span><span>YESGAP<small>YOUTH EMPLOYMENT</small></span></Link><span>Already have an account? <Link to="/login">Sign in</Link></span></div><div className="auth-form-wrap"><div className="eyebrow">{isRegister ? 'Create your workspace' : 'Welcome back'}</div><h2>{isRegister ? `Join as a ${role}` : 'Sign in to YESGAP'}</h2><p>{isRegister ? 'Set up a profile that grows with your work.' : 'Continue building toward your next opportunity.'}</p>
+  const onGoogleCredential = async (credential) => {
+    setError(''); setBusy(true);
+    try {
+      const user = await googleLogin({ credential, role, password: values.password });
+      navigate(`/${user.role}/dashboard`, { replace: true });
+    } catch (reason) { setError(errorMessage(reason)); }
+    finally { setBusy(false); }
+  };
+
+  return <main className="auth-shell"><div className="auth-visual"><BrandLogo className="brand-on-dark" /><div className="auth-visual-content"><div className="eyebrow">A practical path into technology</div><h1>Grow into the<br /><em>work you want.</em></h1><p>Build a skill plan that makes your next move easier to see.</p><div className="auth-quote-card"><span>“</span><p>Every project starts with one small step. Keep going, and your progress will speak for you.</p><small>THE YESGAP APPROACH</small></div></div><span className="auth-visual-foot">LEARN · PRACTICE · MOVE FORWARD</span><div className="auth-visual-shape" /></div><section className="auth-panel"><div className="auth-panel-top"><BrandLogo className="mobile-brand" /><ThemePicker compact /><span>Already have an account? <Link to="/login">Sign in</Link></span></div><div className="auth-form-wrap"><div className="eyebrow">{isRegister ? 'Create your workspace' : 'Welcome back'}</div><h2>{isRegister ? `Join as a ${role}` : 'Sign in to YESGAP'}</h2><p>{isRegister ? 'Set up a profile that grows with your work.' : 'Continue building toward your next opportunity.'}</p>
       {isRegister && <div className="account-type-switch" role="tablist" aria-label="Account type">{['student', 'company'].map((item) => <button key={item} type="button" role="tab" aria-selected={role === item} className={role === item ? 'active' : ''} onClick={() => { setRole(item); setError(''); }}>{item === 'student' ? 'Student' : 'Company'}</button>)}</div>}
       {!isRegister && <div className="account-type-switch" role="tablist" aria-label="Sign-in role">{['student', 'company', 'admin'].map((item) => <button key={item} type="button" role="tab" aria-selected={role === item} className={role === item ? 'active' : ''} onClick={() => setRole(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}</div>}
       {loadingCatalog ? <Loading label="Loading career catalog…" /> : <form className="auth-form" onSubmit={onSubmit}>
@@ -106,5 +123,6 @@ export function AuthPage({ mode = 'login' }) {
         <button className="button button-primary button-submit" type="submit" disabled={busy}>{busy ? 'Please wait…' : isRegister ? 'Create your account' : 'Sign in'}{!busy && <ArrowRight size={17} />}</button>
         {!isRegister && <div className="demo-credentials"><LockKeyhole size={15} /><span><strong>Demo access</strong> Student: <code>demo-student-001</code> · Company: <code>demo-company-001</code> · Password: <code>Demo@12345</code></span></div>}
       </form>}
+      {!isRegister && role !== 'admin' && <div className="google-login-section"><div className="google-login-divider"><span>or continue with</span></div><p className="google-login-note">For the first Google sign-in, enter your YESGAP password above to securely link your account. New here? Create a profile first.</p><GoogleSignIn onCredential={onGoogleCredential} busy={busy} /></div>}
       <div className="auth-bottom">{isRegister ? <>Already registered? <Link to="/login">Sign in instead</Link></> : <>New to YESGAP? <Link to="/register/student">Create a student profile</Link></>}</div></div><div className="auth-legal">By continuing, you agree to use the platform respectfully and keep account details private.</div></section></main>;
 }

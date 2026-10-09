@@ -91,6 +91,7 @@ const userSchema = new Schema(
       trim: true,
       maxlength: 160,
     },
+    googleId: { type: String, unique: true, sparse: true, select: false },
     phone: { type: String, required: true, unique: true, trim: true, maxlength: 20 },
     passwordHash: { type: String, required: true, select: false },
 
@@ -146,6 +147,7 @@ const userSchema = new Schema(
       virtuals: true,
       transform(_doc, ret) {
         delete ret.passwordHash;
+        delete ret.googleId;
         delete ret.__v;
         return ret;
       },

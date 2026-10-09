@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, BookOpen, BriefcaseBusiness, ChartNoAxesCombined, ChevronDown, ClipboardCheck, Code2, FileText, GraduationCap, Grid2X2, Layers3, LogOut, Menu, MessageSquareWarning, Moon, PanelLeftClose, PanelLeftOpen, Search, Settings2, ShieldCheck, Sparkles, Sun, Target, UsersRound, X } from 'lucide-react';
+import { ArrowLeft, Bell, BookOpen, BriefcaseBusiness, ChartNoAxesCombined, ChevronDown, ClipboardCheck, Code2, FileText, GraduationCap, Grid2X2, Layers3, LogOut, Menu, MessageSquareWarning, PanelLeftClose, PanelLeftOpen, Search, Settings2, ShieldCheck, Sparkles, Target, UsersRound, X } from 'lucide-react';
 import { useAuth } from '../app/AuthContext';
 import api, { dataOf } from '../api/client';
+import BrandLogo from '../components/BrandLogo';
+import ThemePicker from '../components/ThemePicker';
+import ScrollArrows from '../components/ScrollArrows';
 import { ErrorNotice, FullPageLoader } from '../components/Common';
 import PortalPages from './PortalPages';
 
@@ -37,11 +40,15 @@ export default function Workspace() {
     }
   });
   const [unread, setUnread] = useState(0);
-  const [themeBusy, setThemeBusy] = useState(false);
+  const sidebarNavRef = useRef(null);
   const path = location.pathname.split('/').filter(Boolean);
   const role = path[0] || user.role;
   const section = path[1] || 'dashboard';
   const skillId = section === 'skills' ? path[2] : undefined;
+
+  useEffect(() => {
+    if (sidebarNavRef.current) sidebarNavRef.current.scrollTop = 0;
+  }, [location.pathname]);
 
   useEffect(() => {
     try {
@@ -59,22 +66,11 @@ export default function Workspace() {
   }, [user, location.pathname]);
 
   if (user.role === 'company' && user.approvalStatus !== 'approved') {
-    return <main className="pending-screen"><div className="pending-top"><Link to="/" className="brand"><span className="brand-mark">Y</span><span>YESGAP<small>HIRING WORKSPACE</small></span></Link><button className="button button-quiet" onClick={logout}><LogOut size={16} />Sign out</button></div><section className="pending-card"><div className="pending-icon"><ShieldCheck size={25} /></div><div className="eyebrow">COMPANY ACCESS</div><h1>We’re reviewing your workspace.</h1><p>Your company profile is in the administrator approval queue. We’ll update your YESGAP inbox as soon as a decision is made.</p>{user.approvalNote && <div className="notice">{user.approvalNote}</div>}<div className="pending-steps"><span className="step-done"><i>✓</i>Registration received</span><span className="step-current"><i>2</i>Admin review</span><span><i>3</i>Hiring workspace</span></div><button className="button button-soft" onClick={() => navigate('/company/profile')}>Review your company profile<ChevronDown size={15} /></button></section></main>;
+    return <main className="pending-screen"><div className="pending-top"><BrandLogo subtitle="HIRING WORKSPACE" compact /><div className="pending-top-actions"><ThemePicker compact /><button className="button button-quiet" onClick={logout}><LogOut size={16} />Sign out</button></div></div><section className="pending-card"><div className="pending-icon"><ShieldCheck size={25} /></div><div className="eyebrow">COMPANY ACCESS</div><h1>We’re reviewing your workspace.</h1><p>Your company profile is in the administrator approval queue. We’ll update your YESGAP inbox as soon as a decision is made.</p>{user.approvalNote && <div className="notice">{user.approvalNote}</div>}<div className="pending-steps"><span className="step-done"><i>✓</i>Registration received</span><span className="step-current"><i>2</i>Admin review</span><span><i>3</i>Hiring workspace</span></div><button className="button button-soft" onClick={() => navigate('/company/profile')}>Review your company profile<ChevronDown size={15} /></button></section></main>;
   }
 
   const navigation = navByRole[role] || navByRole.student;
-  const displayTitle = role === 'admin' ? 'YESGAP Admin' : role === 'company' ? user.companyName || user.fullName : 'YESGAP';
   const roleLabel = role === 'student' ? 'STUDENT WORKSPACE' : role === 'company' ? 'COMPANY WORKSPACE' : 'ADMIN CONSOLE';
-  const themeToggle = async () => {
-    const themes = ['midnight', 'light', 'dark', 'slate', 'emerald', 'royal', 'sunset', 'graphite'];
-    const current = user.theme || 'midnight';
-    const next = themes[(themes.indexOf(current) + 1) % themes.length];
-    setThemeBusy(true);
-    document.documentElement.dataset.theme = next;
-    updateUser({ theme: next });
-    try { await api.patch('/profile', { theme: next }); } catch { updateUser({ theme: current }); document.documentElement.dataset.theme = current; }
-    finally { setThemeBusy(false); }
-  };
   const goBack = () => {
     const historyIndex = window.history.state?.idx;
     if (typeof historyIndex === 'number' && historyIndex > 0) navigate(-1);
@@ -84,16 +80,15 @@ export default function Workspace() {
   return <div className={`workspace-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
     {mobileOpen && <button className="sidebar-scrim" aria-label="Close menu" onClick={() => setMobileOpen(false)} />}
     <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
-      <div className="sidebar-brand-row"><Link to={`/${role}/dashboard`} className="brand"><span className="brand-mark">Y</span><span>YESGAP<small>{roleLabel}</small></span></Link><button aria-label="Close menu" className="icon-button mobile-close" onClick={() => setMobileOpen(false)}><X size={18} /></button></div>
-      <div className="workspace-switcher" title={sidebarCollapsed ? displayTitle : undefined}><div className="switcher-avatar">{role === 'student' ? 'S' : role === 'company' ? (user.companyName || 'C').slice(0, 1) : 'A'}</div><div><strong>{displayTitle}</strong><small>{roleLabel}</small></div><ChevronDown size={15} /></div>
-      <nav className="sidebar-nav" aria-label="Main navigation">{navigation.map((group) => <div className="nav-group" key={group.label}><div className="nav-caption">{group.label}</div>{group.items.map((item) => <Link key={item.id} to={`/${role}/${item.id}`} onClick={() => setMobileOpen(false)} className={`nav-link ${section === item.id && !skillId ? 'active' : ''}`} aria-label={item.label} title={sidebarCollapsed ? item.label : undefined}><item.icon size={18} strokeWidth={1.8} /><span>{item.label}</span>{item.count && unread > 0 && <span className="nav-count">{unread > 9 ? '9+' : unread}</span>}</Link>)}</div>)}</nav>
+      <div className="sidebar-brand-row"><BrandLogo to={`/${role}/dashboard`} subtitle={roleLabel} compact /><button aria-label="Close menu" className="icon-button mobile-close" onClick={() => setMobileOpen(false)}><X size={18} /></button></div>
+      <div className="sidebar-nav-wrap"><nav ref={sidebarNavRef} className="sidebar-nav" aria-label="Main navigation">{navigation.map((group) => <div className="nav-group" key={group.label}><div className="nav-caption">{group.label}</div>{group.items.map((item) => <Link key={item.id} to={`/${role}/${item.id}`} onClick={() => setMobileOpen(false)} className={`nav-link ${section === item.id && !skillId ? 'active' : ''}`} aria-label={item.label} title={sidebarCollapsed ? item.label : undefined}><item.icon size={18} strokeWidth={1.8} /><span>{item.label}</span>{item.count && unread > 0 && <span className="nav-count">{unread > 9 ? '9+' : unread}</span>}</Link>)}</div>)}</nav><ScrollArrows targetRef={sidebarNavRef} /></div>
       {role === 'admin' && user.isSuperAdmin && <div className="admin-badge"><ShieldCheck size={15} />Super administrator</div>}
-      <div className="sidebar-bottom"><button className="nav-link" onClick={themeToggle} disabled={themeBusy} aria-label="Switch appearance" title={sidebarCollapsed ? 'Switch appearance' : undefined}>{user.theme === 'light' ? <Sun size={18} /> : <Moon size={18} />}<span>Switch appearance</span><span className="theme-name">{user.theme || 'midnight'}</span></button><button className="nav-link signout-link" onClick={logout} aria-label="Sign out" title={sidebarCollapsed ? 'Sign out' : undefined}><LogOut size={18} /><span>Sign out</span></button><div className="sidebar-user"><div className="user-avatar">{(user.fullName || user.companyName || 'Y').slice(0, 1).toUpperCase()}</div><div><strong>{user.fullName || user.companyName}</strong><small>{user.username}</small></div><button type="button" className="sidebar-collapse-action" aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}>{sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}</button></div></div>
+      <div className="sidebar-bottom"><button className="nav-link signout-link" onClick={logout} aria-label="Sign out" title={sidebarCollapsed ? 'Sign out' : undefined}><LogOut size={18} /><span>Sign out</span></button><div className="sidebar-user"><div className="user-avatar">{(user.fullName || user.companyName || 'Y').slice(0, 1).toUpperCase()}</div><div><strong>{user.fullName || user.companyName}</strong><small>{user.username}</small></div><button type="button" className="sidebar-collapse-action" aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}>{sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}</button></div></div>
     </aside>
     <main className="workspace-main">
-      <header className="topbar"><div className="topbar-left"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileOpen(true)}><Menu size={20} /></button><button className="workspace-back" type="button" onClick={goBack} aria-label="Go to previous page" title="Go to previous page"><ArrowLeft size={17} /><span>Back</span></button><div className="breadcrumb"><span>{role === 'student' ? 'My space' : role === 'company' ? 'Hiring workspace' : 'Administration'}</span><b>/</b><strong>{titles[section] || 'Overview'}</strong></div></div><div className="topbar-actions"><div className="topbar-date">{new Intl.DateTimeFormat('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date())}</div><button className="icon-button topbar-theme" title="Change theme" onClick={themeToggle}><Moon size={17} /></button><Link className="notification-button" to={`/${role}/notifications`} aria-label={`Inbox, ${unread} unread notifications`}><Bell size={18} />{unread > 0 && <i />}</Link><div className="topbar-divider" /><button className="topbar-profile" onClick={() => navigate(`/${role}/profile`)}><span className="user-avatar">{(user.fullName || 'Y').slice(0, 1).toUpperCase()}</span><span><strong>{user.fullName}</strong><small>{roleLabel}</small></span><ChevronDown size={14} /></button></div></header>
+      <header className="topbar"><div className="topbar-left"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileOpen(true)}><Menu size={20} /></button><button className="workspace-back" type="button" onClick={goBack} aria-label="Go to previous page" title="Go to previous page"><ArrowLeft size={17} /><span>Back</span></button><div className="breadcrumb"><span>{role === 'student' ? 'My space' : role === 'company' ? 'Hiring workspace' : 'Administration'}</span><b>/</b><strong>{titles[section] || 'Overview'}</strong></div></div><div className="topbar-actions"><div className="topbar-date">{new Intl.DateTimeFormat('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date())}</div><ThemePicker className="topbar-theme" compact /><Link className="notification-button" to={`/${role}/notifications`} aria-label={`Inbox, ${unread} unread notifications`}><Bell size={18} />{unread > 0 && <i />}</Link><div className="topbar-divider" /><button className="topbar-profile" onClick={() => navigate(`/${role}/profile`)}><span className="user-avatar">{(user.fullName || 'Y').slice(0, 1).toUpperCase()}</span><span><strong>{user.fullName}</strong><small>{roleLabel}</small></span><ChevronDown size={14} /></button></div></header>
       {user.mustChangePassword && <ForcedPasswordNotice role={role} />}
-      <PortalPages role={role} section={section} skillId={skillId} user={user} onUserUpdated={updateUser} onNavigate={navigate} />
+      <PortalPages key={`${section}:${skillId || ''}`} role={role} section={section} skillId={skillId} user={user} onUserUpdated={updateUser} onNavigate={navigate} />
     </main>
   </div>;
 }
