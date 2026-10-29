@@ -2392,3 +2392,6 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 .assistant-code-toolbar button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent), transparent 35%); outline-offset: 2px; }
 .assistant-code-block pre { max-width: 100%; margin: 0; overflow-x: hidden; padding: 13px 14px; border: 0; border-radius: 0; background: transparent; white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; tab-size: 2; }
 .assistant-code-block pre code { padding: 0; border: 0; color: var(--text); background: transparent; white-space: inherit; overflow-wrap: anywhere; word-break: normal; }
+.assistant-chat-root-open-down { flex-direction: column-reverse; }
+.assistant-launcher { touch-action: none; user-select: none; cursor: grab; }
+.assistant-launcher-dragging { cursor: grabbing; animation: none !important; transform: none !important; transition: none !important; }

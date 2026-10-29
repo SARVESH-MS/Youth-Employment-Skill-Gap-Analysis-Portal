@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Bot, Check, Copy, History, MessageCircle, MessageSquarePlus, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Bot, Check, Copy, GripVertical, History, MessageCircle, MessageSquarePlus, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useAuth } from '../app/AuthContext';
 import api, { errorMessage } from '../api/client';
 
@@ -10,6 +10,8 @@ const suggestions = [
 ];
 
 const chatIdOf = (chat) => String(chat?._id || chat?.id || '');
+const launcherPositionKey = 'yesgap-assistant-launcher-position';
+const clamp = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, max));
 
 const chatDate = (value) => {
   if (!value) return '';
@@ -160,10 +162,134 @@ export default function AssistantChat() {
   const [deletingChatId, setDeletingChatId] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
+  const [draggingLauncher, setDraggingLauncher] = useState(false);
+  const [launcherPosition, setLauncherPosition] = useState(() => {
+    try {
+      if (typeof window === 'undefined') return null;
+      const saved = JSON.parse(window.localStorage.getItem(launcherPositionKey) || 'null');
+      return Number.isFinite(saved?.left) && Number.isFinite(saved?.top)
+        ? { left: saved.left, top: saved.top }
+        : null;
+    } catch {
+      return null;
+    }
+  });
+  const [panelPlacement, setPanelPlacement] = useState(null);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const conversationIdRef = useRef(null);
   const activeUserIdRef = useRef(userId);
+  const panelRef = useRef(null);
+  const launcherRef = useRef(null);
+  const launcherPositionRef = useRef(launcherPosition);
+  const dragRef = useRef({ pointerId: null, startX: 0, startY: 0, startLeft: 0, startTop: 0, moved: false });
+
+  useEffect(() => {
+    launcherPositionRef.current = launcherPosition;
+  }, [launcherPosition]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPanelPlacement(null);
+      return undefined;
+    }
+
+    const placePanel = () => {
+      const panel = panelRef.current;
+      const launcher = launcherRef.current;
+      if (!panel || !launcher) return;
+
+      const margin = 10;
+      const gap = 12;
+      const launcherWidth = launcher.offsetWidth;
+      const launcherHeight = launcher.offsetHeight;
+      const panelWidth = panel.offsetWidth;
+      const panelHeight = Math.min(600, Math.max(280, window.innerHeight - 120));
+      const saved = launcherPositionRef.current;
+      const buttonLeft = clamp(saved?.left ?? window.innerWidth - launcherWidth - 20, margin, window.innerWidth - launcherWidth - margin);
+      const buttonTop = clamp(saved?.top ?? window.innerHeight - launcherHeight - 20, margin, window.innerHeight - launcherHeight - margin);
+      const aboveSpace = buttonTop - gap - margin;
+      const belowSpace = window.innerHeight - buttonTop - launcherHeight - gap - margin;
+      const opensAbove = aboveSpace >= panelHeight || aboveSpace >= belowSpace;
+      const availableHeight = opensAbove ? aboveSpace : belowSpace;
+      const fittedHeight = Math.min(panelHeight, Math.max(280, availableHeight));
+      const left = clamp(buttonLeft + launcherWidth - panelWidth, margin, window.innerWidth - panelWidth - margin);
+      const top = opensAbove ? buttonTop - fittedHeight - gap : buttonTop;
+
+      setPanelPlacement({ left, top, direction: opensAbove ? 'up' : 'down', height: fittedHeight });
+    };
+
+    placePanel();
+    window.addEventListener('resize', placePanel);
+    return () => window.removeEventListener('resize', placePanel);
+  }, [open, launcherPosition]);
+
+  useEffect(() => {
+    const keepLauncherOnscreen = () => {
+      const button = launcherRef.current;
+      const current = launcherPositionRef.current;
+      if (!button || !current || open) return;
+      const next = {
+        left: clamp(current.left, 10, window.innerWidth - button.offsetWidth - 10),
+        top: clamp(current.top, 10, window.innerHeight - button.offsetHeight - 10),
+      };
+      launcherPositionRef.current = next;
+      setLauncherPosition(next);
+      try { window.localStorage.setItem(launcherPositionKey, JSON.stringify(next)); } catch { /* Ignore unavailable storage. */ }
+    };
+    keepLauncherOnscreen();
+    window.addEventListener('resize', keepLauncherOnscreen);
+    return () => window.removeEventListener('resize', keepLauncherOnscreen);
+  }, [open]);
+
+  const startLauncherDrag = (event) => {
+    if (open || (event.button !== undefined && event.button !== 0)) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: rect.left,
+      startTop: rect.top,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const moveLauncher = (event) => {
+    const drag = dragRef.current;
+    if (drag.pointerId !== event.pointerId || open) return;
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(deltaX, deltaY) < 5) return;
+    if (!drag.moved) setDraggingLauncher(true);
+    drag.moved = true;
+    const button = event.currentTarget;
+    const next = {
+      left: clamp(drag.startLeft + deltaX, 8, window.innerWidth - button.offsetWidth - 8),
+      top: clamp(drag.startTop + deltaY, 8, window.innerHeight - button.offsetHeight - 8),
+    };
+    launcherPositionRef.current = next;
+    setLauncherPosition(next);
+  };
+
+  const finishLauncherDrag = (event) => {
+    const drag = dragRef.current;
+    if (drag.pointerId !== event.pointerId) return;
+    drag.pointerId = null;
+    setDraggingLauncher(false);
+    if (drag.moved && launcherPositionRef.current) {
+      try { window.localStorage.setItem(launcherPositionKey, JSON.stringify(launcherPositionRef.current)); } catch { /* Ignore unavailable storage. */ }
+    }
+  };
+
+  const toggleAssistant = () => {
+    if (dragRef.current.moved) {
+      dragRef.current.moved = false;
+      return;
+    }
+    setOpen((current) => !current);
+  };
 
   const setActiveConversation = (id) => {
     const normalizedId = id ? String(id) : null;
@@ -354,8 +480,14 @@ export default function AssistantChat() {
     event.target.style.height = `${Math.min(event.target.scrollHeight, 140)}px`;
   };
 
-  return <div className="assistant-chat-root">
-    {open && <section className="assistant-panel" role="dialog" aria-label="YESGAP AI assistant">
+  const rootStyle = panelPlacement
+    ? { left: `${panelPlacement.left}px`, top: `${panelPlacement.top}px`, right: 'auto', bottom: 'auto' }
+    : launcherPosition
+      ? { left: `${launcherPosition.left}px`, top: `${launcherPosition.top}px`, right: 'auto', bottom: 'auto' }
+      : undefined;
+
+  return <div className={`assistant-chat-root ${panelPlacement?.direction === 'down' ? 'assistant-chat-root-open-down' : ''}`} style={rootStyle}>
+    {open && <section ref={panelRef} className="assistant-panel" style={panelPlacement ? { height: `${panelPlacement.height}px` } : undefined} role="dialog" aria-label="YESGAP AI assistant">
       <header className="assistant-header">
         <div className="assistant-brand-icon"><Bot size={19} /></div>
         <div className="assistant-heading"><strong>YESGAP Assistant</strong><span><i />Career &amp; learning guide</span></div>
@@ -421,8 +553,21 @@ export default function AssistantChat() {
         </details>
       </div>
     </section>}
-    <button className={`assistant-launcher ${open ? 'assistant-launcher-open' : ''}`} type="button" aria-label={open ? 'Close YESGAP assistant' : 'Open YESGAP assistant'} aria-expanded={open} onClick={() => setOpen((current) => !current)}>
-      {open ? <X size={22} /> : <><MessageCircle size={21} /><span>Ask YESGAP</span></>}
+    <button
+      ref={launcherRef}
+      className={`assistant-launcher ${open ? 'assistant-launcher-open' : ''} ${draggingLauncher ? 'assistant-launcher-dragging' : ''}`}
+      type="button"
+      aria-label={open ? 'Close YESGAP assistant' : 'Open YESGAP assistant'}
+      title={open ? 'Close YESGAP assistant' : 'Drag to move · Click to open'}
+      aria-expanded={open}
+      onPointerDown={startLauncherDrag}
+      onPointerMove={moveLauncher}
+      onPointerUp={finishLauncherDrag}
+      onPointerCancel={finishLauncherDrag}
+      onDragStart={(event) => event.preventDefault()}
+      onClick={toggleAssistant}
+    >
+      {open ? <X size={22} /> : <><MessageCircle size={21} /><span>Ask YESGAP</span><GripVertical className="assistant-drag-handle" size={15} /></>}
     </button>
   </div>;
 }
