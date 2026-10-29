@@ -2191,3 +2191,77 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
   .auth-form-wrap { width: 100%; margin: 0; padding: 22px 18px; border-radius: 15px; }
   .auth-legal { width: 100%; margin-top: 13px; }
 }
+
+/* Shared visual system for student, company, and administration workspaces. */
+.workspace-shell { background: var(--bg); }
+.workspace-main {
+  min-height: 100vh;
+  background-image: radial-gradient(ellipse at 96% 0%, color-mix(in srgb, var(--accent) 3%, transparent), transparent 34rem);
+}
+.sidebar { border-right-color: color-mix(in srgb, var(--line), var(--text) 4%); box-shadow: 8px 0 28px rgba(15, 33, 37, .025); }
+.sidebar-brand-row { padding-bottom: 24px; }
+.nav-group + .nav-group { margin-top: 22px; }
+.nav-caption { padding-bottom: 9px; font-size: 9px; }
+.nav-link { min-height: 42px; border-radius: 10px; font-size: 12px; }
+.nav-link.active { box-shadow: inset 3px 0 var(--accent); }
+.sidebar-bottom { padding-top: 11px; }
+.sidebar-bottom .nav-link { min-height: 39px; font-size: 11px; }
+.topbar { height: 70px; padding-inline: clamp(18px, 2.8vw, 42px); }
+.breadcrumb { gap: 11px; font-size: 11px; }
+.topbar-actions { gap: clamp(9px, 1.1vw, 16px); }
+.topbar-date { font-size: 10px; }
+.topbar-profile strong { font-size: 10px; }
+.topbar-profile small { font-size: 8px; }
+.workspace-shell .page-content { width: min(100%, 1500px); padding: clamp(24px, 2.4vw, 38px) clamp(20px, 2.6vw, 42px) 56px; }
+.workspace-shell .section-heading { align-items: center; gap: 22px; margin-bottom: 24px; }
+.workspace-shell .section-heading h2 { margin: 5px 0 7px; font-size: 25px; line-height: 1.2; }
+.workspace-shell .section-heading p { max-width: 72ch; font-size: 13px; line-height: 1.65; }
+.workspace-shell .eyebrow { font-size: 10px; }
+.workspace-shell .panel { border-radius: 15px; box-shadow: 0 4px 18px color-mix(in srgb, var(--text) 4%, transparent); }
+.workspace-shell .button { min-height: 42px; border-radius: 9px; font-size: 12px; }
+.workspace-shell .button-small { min-height: 35px; font-size: 11px; }
+.workspace-shell .input, .workspace-shell .filter-select { min-height: 45px; border-radius: 9px; }
+.workspace-shell .field-label { font-size: 12px; }
+.workspace-shell .badge { min-height: 24px; border-radius: 7px; font-size: 10px; }
+.workspace-shell .stat-card { min-height: 122px; padding: 17px; border-radius: 14px; }
+.workspace-shell .stat-top { font-size: 11px; }
+.workspace-shell .stat-icon { width: 34px; height: 34px; border-radius: 10px; }
+.workspace-shell .stat-value { margin-top: 13px; font-size: 28px; }
+.workspace-shell .stat-card p { font-size: 10px; line-height: 1.45; }
+.workspace-shell .dashboard-lower-grid,
+.workspace-shell .dashboard-recommend-grid,
+.workspace-shell .student-overview-grid,
+.workspace-shell .company-dashboard-grid { gap: 16px; margin-bottom: 17px; }
+.workspace-shell .dashboard-lower-grid > .panel,
+.workspace-shell .dashboard-recommend-grid > .panel,
+.workspace-shell .student-overview-grid > .panel { padding: 20px; }
+.workspace-shell .dashboard-lower-grid .section-heading h2,
+.workspace-shell .recommendation-panel .section-heading h2 { font-size: 16px; }
+.workspace-shell .search-field, .workspace-shell .filter-field, .workspace-shell .filter-select { border-radius: 9px; }
+.workspace-shell .status-filter-row { gap: 8px; margin-bottom: 18px; }
+.workspace-shell .filter-pill { min-height: 34px; padding-inline: 13px; border-radius: 18px; font-size: 10px; }
+.workspace-shell .empty-state { min-height: 230px; padding: 32px; }
+.workspace-shell .empty-state h3 { font-size: 17px; }
+.workspace-shell .empty-state p { font-size: 13px; line-height: 1.65; }
+.workspace-shell .forced-password-banner { border-radius: 11px; font-size: 12px; }
+.workspace-shell :is(.application-card, .approval-card, .opening-card, .recruitment-card, .result-card, .complaint-card) { border-color: var(--line); }
+
+@media (max-width: 900px) {
+  .workspace-shell .page-content { padding: 25px 22px 42px; }
+  .workspace-shell .section-heading h2 { font-size: 23px; }
+  .workspace-shell .stat-card { min-height: 112px; }
+}
+@media (max-width: 680px) {
+  .topbar { height: 60px; }
+  .workspace-shell .page-content { padding: 21px 16px 36px; }
+  .workspace-shell .section-heading { gap: 11px; margin-bottom: 19px; }
+  .workspace-shell .section-heading h2 { font-size: 21px; }
+  .workspace-shell .section-heading p { font-size: 12px; }
+  .workspace-shell .four-stats { gap: 9px; }
+  .workspace-shell .stat-card { min-height: 104px; padding: 13px; }
+  .workspace-shell .stat-value { font-size: 24px; }
+  .workspace-shell .dashboard-lower-grid > .panel,
+  .workspace-shell .dashboard-recommend-grid > .panel,
+  .workspace-shell .student-overview-grid > .panel { padding: 15px; }
+  .workspace-shell .empty-state { min-height: 190px; padding: 24px 16px; }
+}
