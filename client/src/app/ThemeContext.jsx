@@ -3,14 +3,14 @@ import { useAuth } from './AuthContext';
 import api from '../api/client';
 
 export const themeOptions = [
-  { value: 'midnight', label: 'Midnight', description: 'Deep navy and mint', color: '#64c7b2' },
-  { value: 'dark', label: 'Dark', description: 'Low-glare charcoal', color: '#83d7c5' },
-  { value: 'light', label: 'Light', description: 'Warm paper', color: '#379889' },
-  { value: 'slate', label: 'Slate', description: 'Cool blue-grey', color: '#6aa9d2' },
-  { value: 'emerald', label: 'Emerald', description: 'Evergreen accents', color: '#319b73' },
-  { value: 'royal', label: 'Royal', description: 'Indigo and violet', color: '#7364c5' },
-  { value: 'sunset', label: 'Sunset', description: 'Warm copper', color: '#c46d47' },
-  { value: 'graphite', label: 'Graphite', description: 'Monochrome', color: '#a5b2b3' },
+  { value: 'midnight', label: 'Midnight', description: 'Deep teal', color: '#55c7b0', previewBg: '#102022', previewSurface: '#1a3032' },
+  { value: 'dark', label: 'Dark', description: 'Charcoal and cyan', color: '#4dbfd0', previewBg: '#181b22', previewSurface: '#272b33' },
+  { value: 'light', label: 'Light', description: 'Warm paper', color: '#2b8279', previewBg: '#f7f7f2', previewSurface: '#fffefa' },
+  { value: 'slate', label: 'Slate', description: 'Cool blue', color: '#397cab', previewBg: '#eef4f8', previewSurface: '#fbfdff' },
+  { value: 'emerald', label: 'Emerald', description: 'Fresh green', color: '#24845c', previewBg: '#edf6f0', previewSurface: '#fbfefc' },
+  { value: 'royal', label: 'Royal', description: 'Indigo and violet', color: '#7160c7', previewBg: '#f2f0fb', previewSurface: '#fcfbff' },
+  { value: 'sunset', label: 'Sunset', description: 'Copper and cream', color: '#bb6642', previewBg: '#faf1e9', previewSurface: '#fffaf5' },
+  { value: 'graphite', label: 'Graphite', description: 'Pure monochrome', color: '#b4c0bf', previewBg: '#151515', previewSurface: '#252525' },
 ];
 
 const themeValues = new Set(themeOptions.map((item) => item.value));

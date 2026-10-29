@@ -43,7 +43,7 @@ export default function ThemePicker({ className = '', compact = false }) {
     {open && <div className="theme-picker-menu" role="menu" aria-label="Choose appearance">
       <div className="theme-picker-heading"><strong>Appearance</strong><span>{current.label}</span></div>
       <div className="theme-picker-options">{themeOptions.map((item) => <button type="button" role="menuitemradio" aria-checked={theme === item.value} className={`theme-picker-option ${theme === item.value ? 'selected' : ''}`} key={item.value} disabled={saving} onClick={() => { void choose(item.value); }}>
-        <i className="theme-picker-dot" style={{ '--theme-chip-color': item.color }} />
+        <span className="theme-picker-preview" aria-hidden="true" style={{ '--theme-preview-bg': item.previewBg, '--theme-preview-surface': item.previewSurface, '--theme-preview-accent': item.color }}><i /><i /><i /></span>
         <span><strong>{item.label}</strong><small>{item.description}</small></span>
         {theme === item.value && <Check size={15} aria-hidden="true" />}
       </button>)}</div>
