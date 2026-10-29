@@ -2268,23 +2268,24 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 
 /* Chat assistant: clearer message hierarchy and a more comfortable reading size. */
 .assistant-panel {
-  width: min(448px, calc(100vw - 32px));
-  height: min(680px, calc(100dvh - 104px));
+  width: min(440px, calc(100vw - 32px));
+  height: min(640px, calc(100dvh - 112px));
   border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--surface);
   box-shadow: 0 28px 84px rgba(12, 29, 33, .3), 0 3px 12px rgba(12, 29, 33, .1);
 }
 .assistant-header {
-  min-height: 72px;
-  padding: 13px 15px;
+  min-height: 64px;
+  padding: 9px 12px;
+  gap: 8px;
   background: linear-gradient(115deg, color-mix(in srgb, var(--accent-soft) 48%, var(--surface)), var(--surface) 68%);
 }
 .assistant-brand-icon { width: 40px; height: 40px; border-radius: 13px; }
 .assistant-heading strong { font-size: 14px; letter-spacing: -.02em; }
 .assistant-heading span { font-size: 10px; }
 .assistant-new-chat { min-height: 38px; padding-inline: 10px; font-size: 10px; }
-.assistant-header-action { width: 38px; height: 38px; }
+.assistant-header-action { width: 34px; height: 34px; }
 .assistant-messages { padding: 21px 18px 18px; background: var(--bg); }
 .assistant-welcome { padding: 38px 3px 14px; }
 .assistant-welcome-icon { width: 48px; height: 48px; margin-bottom: 16px; border: 1px solid color-mix(in srgb, var(--accent), transparent 75%); }
@@ -2309,6 +2310,7 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 .assistant-message { gap: 9px; margin-bottom: 17px; }
 .assistant-message-icon { width: 30px; height: 30px; border: 1px solid color-mix(in srgb, var(--accent), transparent 78%); border-radius: 10px; }
 .assistant-message-bubble {
+  min-width: 0;
   max-width: min(88%, 350px);
   padding: 12px 14px;
   border: 1px solid var(--line-soft);
@@ -2327,6 +2329,15 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
   background: var(--accent-soft);
 }
 .assistant-message-bubble h1, .assistant-message-bubble h2, .assistant-message-bubble h3 { font-size: 14px; }
+.assistant-message-bubble pre {
+  max-width: 100%;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  tab-size: 2;
+}
+.assistant-message-bubble pre code { white-space: inherit; overflow-wrap: anywhere; word-break: normal; }
 .assistant-typing { padding-left: 39px; font-size: 11px; }
 .assistant-typing em { font-size: 11px; }
 .assistant-composer-wrap { padding: 11px 14px 12px; }
@@ -2334,12 +2345,16 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 .assistant-composer textarea { min-height: 42px; font-size: 13px; }
 .assistant-send { width: 40px; height: 40px; border-radius: 12px; }
 .assistant-composer-hint { margin-top: 7px; font-size: 10px; }
-.assistant-privacy-note { font-size: 9px; line-height: 1.5; }
+.assistant-privacy-note { padding-top: 5px; font-size: 9px; line-height: 1.5; }
+.assistant-privacy-note summary { color: var(--text-tertiary); cursor: pointer; list-style: none; text-align: center; }
+.assistant-privacy-note summary::-webkit-details-marker { display: none; }
+.assistant-privacy-note summary:hover { color: var(--accent-strong); }
+.assistant-privacy-note p { max-width: 360px; margin: 7px auto 0; color: var(--text-secondary); text-align: center; font-size: 10px; line-height: 1.5; }
 .assistant-launcher { min-height: 52px; padding-inline: 19px; font-size: 12px; }
 .assistant-launcher-open { width: 46px; min-height: 46px; padding: 0; }
 @media (max-width: 620px) {
   .assistant-chat-root { right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); gap: 8px; }
-  .assistant-panel { width: calc(100vw - 16px); height: min(680px, calc(100dvh - 84px)); min-height: 280px; border-radius: 18px; }
+  .assistant-panel { width: calc(100vw - 16px); height: min(640px, calc(100dvh - 112px)); min-height: 280px; border-radius: 18px; }
   .assistant-header { min-height: 64px; padding: 9px 10px; gap: 7px; }
   .assistant-brand-icon { width: 36px; height: 36px; }
   .assistant-heading strong { font-size: 12px; }
@@ -2355,6 +2370,7 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
   .assistant-message-bubble { max-width: 90%; padding: 10px 12px; font-size: 12px; }
   .assistant-composer-wrap { padding: 8px 9px max(9px, env(safe-area-inset-bottom)); }
   .assistant-privacy-note { font-size: 8px; }
+  .assistant-privacy-note p { font-size: 9px; }
   .assistant-launcher { min-height: 48px; }
 }
 @media (prefers-reduced-motion: reduce) {

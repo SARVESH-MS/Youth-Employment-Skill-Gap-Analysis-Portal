@@ -368,7 +368,10 @@ export default function AssistantChat() {
           <button type="submit" className="assistant-send" aria-label="Send message" disabled={!draft.trim() || sending || historyLoading}><Send size={17} /></button>
         </form>
         <p className="assistant-composer-hint">Enter to send <span>·</span> Shift + Enter for a new line</p>
-        <p className="assistant-privacy-note">AI can make mistakes. Messages and, when needed, your progress summary or candidate names and progress go to Gemini. Don’t share passwords or sensitive details.</p>
+        <details className="assistant-privacy-note">
+          <summary>AI can make mistakes · View privacy details</summary>
+          <p>Messages and, when needed, your progress summary or candidate names and progress go to Gemini. Don’t share passwords or sensitive details.</p>
+        </details>
       </div>
     </section>}
     <button className={`assistant-launcher ${open ? 'assistant-launcher-open' : ''}`} type="button" aria-label={open ? 'Close YESGAP assistant' : 'Open YESGAP assistant'} aria-expanded={open} onClick={() => setOpen((current) => !current)}>
