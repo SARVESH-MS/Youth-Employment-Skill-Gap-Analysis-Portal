@@ -4,13 +4,13 @@ import api from '../api/client';
 
 export const themeOptions = [
   { value: 'midnight', label: 'Midnight', description: 'Deep teal', color: '#55c7b0', previewBg: '#102022', previewSurface: '#1a3032' },
-  { value: 'dark', label: 'Dark', description: 'Charcoal and cyan', color: '#4dbfd0', previewBg: '#181b22', previewSurface: '#272b33' },
-  { value: 'light', label: 'Light', description: 'Warm paper', color: '#2b8279', previewBg: '#f7f7f2', previewSurface: '#fffefa' },
+  { value: 'dark', label: 'Dark', description: 'Charcoal cyan', color: '#4dbfd0', previewBg: '#181b22', previewSurface: '#272b33' },
+  { value: 'light', label: 'Light', description: 'Warm neutral', color: '#2b8279', previewBg: '#f7f7f2', previewSurface: '#fffefa' },
   { value: 'slate', label: 'Slate', description: 'Cool blue', color: '#397cab', previewBg: '#eef4f8', previewSurface: '#fbfdff' },
-  { value: 'emerald', label: 'Emerald', description: 'Fresh green', color: '#24845c', previewBg: '#edf6f0', previewSurface: '#fbfefc' },
-  { value: 'royal', label: 'Royal', description: 'Indigo and violet', color: '#7160c7', previewBg: '#f2f0fb', previewSurface: '#fcfbff' },
-  { value: 'sunset', label: 'Sunset', description: 'Copper and cream', color: '#bb6642', previewBg: '#faf1e9', previewSurface: '#fffaf5' },
-  { value: 'graphite', label: 'Graphite', description: 'Charcoal with mint highlights', color: '#70c7ae', previewBg: '#151515', previewSurface: '#252525' },
+  { value: 'emerald', label: 'Emerald', description: 'Forest green', color: '#24845c', previewBg: '#edf6f0', previewSurface: '#fbfefc' },
+  { value: 'royal', label: 'Royal', description: 'Indigo violet', color: '#7160c7', previewBg: '#f2f0fb', previewSurface: '#fcfbff' },
+  { value: 'sunset', label: 'Sunset', description: 'Copper cream', color: '#bb6642', previewBg: '#faf1e9', previewSurface: '#fffaf5' },
+  { value: 'graphite', label: 'Graphite', description: 'Charcoal mint', color: '#70c7ae', previewBg: '#151515', previewSurface: '#252525' },
 ];
 
 const themeValues = new Set(themeOptions.map((item) => item.value));
