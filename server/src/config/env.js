@@ -60,6 +60,7 @@ const env = {
   db: {
     uri: process.env.MONGODB_URI || '',
     options: {
+      dbName: process.env.MONGODB_DB_NAME || 'youth_employment_sgap',
       serverSelectionTimeoutMS: 10000,
       maxPoolSize: 20,
     },
