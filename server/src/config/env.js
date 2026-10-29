@@ -133,7 +133,7 @@ const env = {
     studentCount: toInt(process.env.SEED_STUDENT_COUNT, 60),
     companyCount: toInt(process.env.SEED_COMPANY_COUNT, 100),
     adminCount: toInt(process.env.SEED_ADMIN_COUNT, 4),
-    demoPassword: process.env.SEED_DEMO_PASSWORD || 'Demo@12345',
+    demoPassword: process.env.SEED_DEMO_PASSWORD || 'yesgap@123',
   },
 };
 

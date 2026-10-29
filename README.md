@@ -33,9 +33,9 @@ These are shared demo credentials for development data in the configured Atlas d
 | Account | Username | Password |
 | --- | --- | --- |
 | Super administrator | `superadmin` | `ChangeMe!SuperAdmin#2026` |
-| Administrator | `demo-admin-01` through `demo-admin-03` | `Demo@12345` |
-| Student | `demo-student-001` through `demo-student-060` | `Demo@12345` |
-| Approved company | `demo-company-001` through `demo-company-100` | `Demo@12345` |
+| Administrator | `demo-admin-01` through `demo-admin-03` | `yesgap@123` |
+| Student | `demo-student-001` through `demo-student-060` | `yesgap@123` |
+| Approved company | `demo-company-001` through `demo-company-100` | `yesgap@123` |
 
 The super-admin username, email, phone, and password are read from `INITIAL_ADMIN_*`. If you change those variables, use the configured username or email. Demo counts and the shared demo password are configurable with `SEED_STUDENT_COUNT`, `SEED_COMPANY_COUNT`, `SEED_ADMIN_COUNT`, and `SEED_DEMO_PASSWORD`.
 
