@@ -2269,15 +2269,15 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 /* Chat assistant: clearer message hierarchy and a more comfortable reading size. */
 .assistant-panel {
   width: min(440px, calc(100vw - 32px));
-  height: min(640px, calc(100dvh - 112px));
+  height: min(600px, calc(100dvh - 120px));
   border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--surface);
   box-shadow: 0 28px 84px rgba(12, 29, 33, .3), 0 3px 12px rgba(12, 29, 33, .1);
 }
 .assistant-header {
-  min-height: 64px;
-  padding: 9px 12px;
+  min-height: 62px;
+  padding: 8px 12px;
   gap: 8px;
   background: linear-gradient(115deg, color-mix(in srgb, var(--accent-soft) 48%, var(--surface)), var(--surface) 68%);
 }
@@ -2312,18 +2312,19 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 .assistant-message-bubble {
   min-width: 0;
   max-width: min(88%, 350px);
-  padding: 12px 14px;
-  border: 1px solid var(--line-soft);
-  border-radius: 4px 15px 15px 15px;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
   color: var(--text);
-  background: var(--surface);
-  box-shadow: 0 2px 8px rgba(12, 29, 33, .035);
+  background: transparent;
+  box-shadow: none;
   font-size: 13px;
   line-height: 1.65;
 }
 .assistant-message-user .assistant-message-bubble {
   max-width: 86%;
-  border-color: color-mix(in srgb, var(--accent), var(--line) 72%);
+  padding: 10px 13px;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--line) 72%);
   border-radius: 15px 4px 15px 15px;
   color: var(--text);
   background: var(--accent-soft);
@@ -2332,6 +2333,11 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 .assistant-message-bubble pre {
   max-width: 100%;
   overflow-x: hidden;
+  margin: 10px 0 12px;
+  padding: 13px 14px;
+  border-color: var(--line);
+  border-radius: 13px;
+  background: var(--surface-soft);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: normal;
@@ -2354,8 +2360,8 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 .assistant-launcher-open { width: 46px; min-height: 46px; padding: 0; }
 @media (max-width: 620px) {
   .assistant-chat-root { right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); gap: 8px; }
-  .assistant-panel { width: calc(100vw - 16px); height: min(640px, calc(100dvh - 112px)); min-height: 280px; border-radius: 18px; }
-  .assistant-header { min-height: 64px; padding: 9px 10px; gap: 7px; }
+  .assistant-panel { width: min(440px, calc(100vw - 20px)); height: min(600px, calc(100dvh - 120px)); min-height: 280px; border-radius: 18px; }
+  .assistant-header { min-height: 62px; padding: 8px 10px; gap: 7px; }
   .assistant-brand-icon { width: 36px; height: 36px; }
   .assistant-heading strong { font-size: 12px; }
   .assistant-heading span { font-size: 9px; }
@@ -2367,7 +2373,8 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
   .assistant-welcome h2 { font-size: 21px; }
   .assistant-suggestions { margin-top: 18px; }
   .assistant-suggestions button { min-height: 46px; font-size: 11px; }
-  .assistant-message-bubble { max-width: 90%; padding: 10px 12px; font-size: 12px; }
+  .assistant-message-bubble { max-width: 90%; padding: 2px 0; font-size: 12px; }
+  .assistant-message-user .assistant-message-bubble { padding: 10px 12px; }
   .assistant-composer-wrap { padding: 8px 9px max(9px, env(safe-area-inset-bottom)); }
   .assistant-privacy-note { font-size: 8px; }
   .assistant-privacy-note p { font-size: 9px; }
