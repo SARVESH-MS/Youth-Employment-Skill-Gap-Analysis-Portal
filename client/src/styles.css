@@ -1811,13 +1811,15 @@ html.landing-page-active body::-webkit-scrollbar {
     line-height: 1.04;
   }
   .yg-home .hero-lede { max-width: 38ch; font-size: 13px; line-height: 1.65; }
-  .yg-home .hero-visual.yg-immersive-world { opacity: .88; }
+  .yg-home .hero-visual.yg-immersive-world { opacity: 1; }
   .yg-home .yg-stage-vignette {
-    background: linear-gradient(180deg, rgba(17, 29, 28, .99) 0%, rgba(17, 29, 28, .97) 39%, rgba(17, 29, 28, .82) 64%, rgba(17, 29, 28, .32) 100%);
+    background: linear-gradient(180deg, rgba(17, 29, 28, .97) 0%, rgba(17, 29, 28, .92) 40%, rgba(17, 29, 28, .78) 54%, rgba(17, 29, 28, .32) 76%, rgba(17, 29, 28, .14) 90%, rgba(17, 29, 28, .28) 100%);
   }
   .yg-home .yg-stage-copy,
   .yg-home .yg-stage-counter,
-  .yg-home .yg-scene-label { display: none; }
+  .yg-home .yg-scene-label-html { display: none; }
+  .yg-home .yg-scene-label-role { display: flex; top: 69%; right: 6%; }
+  .yg-home .yg-scene-label-js { display: flex; top: 82%; right: 18%; }
   .landing-page-active .scroll-arrows:not(.scroll-arrows-sidebar) { display: none; }
 }
 
