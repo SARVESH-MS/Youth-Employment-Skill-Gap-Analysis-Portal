@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     initialDeployHook: npm run seed:catalog
     healthCheckPath: /api/health/ready
