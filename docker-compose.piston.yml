@@ -1,0 +1,22 @@
+services:
+  piston:
+    image: ghcr.io/engineer-man/piston:latest
+    container_name: yesgap-piston
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "127.0.0.1:2000:2000"
+    volumes:
+      - piston-packages:/piston/packages
+    tmpfs:
+      - /tmp:exec
+    environment:
+      PISTON_DISABLE_NETWORKING: "true"
+      PISTON_COMPILE_TIMEOUT: "10000"
+      PISTON_RUN_TIMEOUT: "5000"
+      PISTON_COMPILE_CPU_TIME: "10000"
+      PISTON_RUN_CPU_TIME: "5000"
+      PISTON_OUTPUT_MAX_SIZE: "20000"
+
+volumes:
+  piston-packages:

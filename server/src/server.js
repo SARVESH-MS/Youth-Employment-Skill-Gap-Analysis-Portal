@@ -5,6 +5,8 @@ const { env, assertProductionSafety } = require('./config/env');
 const { connectDB, disconnectDB } = require('./config/db');
 const { User } = require('./models');
 const { createLogger } = require('./utils/logger');
+const readinessScoreService = require('./services/readinessScore.service');
+const { startMarketDemandScheduler, stopMarketDemandScheduler } = require('./services/marketDemand.service');
 
 const log = createLogger('server');
 let server;
@@ -26,11 +28,15 @@ const start = async () => {
   assertProductionSafety();
   await connectDB();
   await bootstrapInitialAdmin();
-  server = app.listen(env.server.port, () => log.info(`YESGAP API listening on http://localhost:${env.server.port}`));
+  const migratedLinks = await readinessScoreService.migrateDomainSkillMetadata();
+  if (migratedLinks) log.info(`Added domain-specific readiness importance metadata to ${migratedLinks} skill links`);
+  await startMarketDemandScheduler(log);
+  server = app.listen(env.server.port, '0.0.0.0', () => log.info(`YESGAP API listening on port ${env.server.port}`));
 };
 
 const shutdown = async (signal) => {
   log.info(`${signal} received; closing the server`);
+  stopMarketDemandScheduler();
   if (server) await new Promise((resolve) => server.close(resolve));
   await disconnectDB();
   process.exit(0);

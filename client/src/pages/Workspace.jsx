@@ -22,10 +22,10 @@ const navByRole = {
   admin: [
     { label: 'PLATFORM', items: [{ id: 'dashboard', label: 'Overview', icon: Grid2X2 }, { id: 'approvals', label: 'Company approvals', icon: ShieldCheck }, { id: 'users', label: 'User accounts', icon: UsersRound }] },
     { label: 'CATALOG & CONTENT', items: [{ id: 'domains', label: 'Career domains', icon: Layers3 }, { id: 'skills', label: 'Skills catalog', icon: Sparkles }, { id: 'learning', label: 'Learning content', icon: BookOpen }, { id: 'practice', label: 'Practice questions', icon: Target }, { id: 'coding', label: 'Coding problems', icon: Code2 }, { id: 'tests', label: 'Question bank', icon: ClipboardCheck }] },
-    { label: 'OPERATIONS', items: [{ id: 'complaints', label: 'Complaints', icon: MessageSquareWarning }, { id: 'activity', label: 'Activity & audit', icon: FileText }, { id: 'notifications', label: 'Inbox', icon: Bell, count: true }] },
+    { label: 'OPERATIONS', items: [{ id: 'readiness', label: 'Readiness model', icon: Target }, { id: 'complaints', label: 'Complaints', icon: MessageSquareWarning }, { id: 'activity', label: 'Activity & audit', icon: FileText }, { id: 'notifications', label: 'Inbox', icon: Bell, count: true }] },
   ],
 };
-const titles = { dashboard: 'Overview', skills: 'Skill library', roadmap: 'Your learning roadmap', learning: 'Learning studio', practice: 'Practice question bank', coding: 'Coding challenge library', tests: 'Assessment question bank', opportunities: 'Opportunities', recruitment: 'Recruitment', results: 'Assessment results', notifications: 'Your inbox', complaints: 'Help & feedback', profile: 'Profile & settings', candidates: 'Candidate discovery', approvals: 'Company approvals', users: 'User accounts', domains: 'Career domains', activity: 'Activity & audit', };
+const titles = { dashboard: 'Overview', skills: 'Skill library', roadmap: 'Your learning roadmap', learning: 'Learning studio', practice: 'Practice question bank', coding: 'Coding challenge library', tests: 'Assessment question bank', opportunities: 'Opportunities', recruitment: 'Recruitment', results: 'Assessment results', notifications: 'Your inbox', complaints: 'Help & feedback', profile: 'Profile & settings', candidates: 'Candidate discovery', approvals: 'Company approvals', users: 'User accounts', domains: 'Career domains', readiness: 'Readiness model', activity: 'Activity & audit', };
 
 export default function Workspace() {
   const { user, logout, updateUser } = useAuth();
@@ -48,6 +48,7 @@ export default function Workspace() {
 
   useEffect(() => {
     if (sidebarNavRef.current) sidebarNavRef.current.scrollTop = 0;
+    window.scrollTo(0, 0);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function Workspace() {
     else navigate(`/${role}/dashboard`);
   };
 
-  return <div className={`workspace-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+  return <div className={`workspace-shell ${role === 'admin' ? 'admin-workspace' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
     {mobileOpen && <button className="sidebar-scrim" aria-label="Close menu" onClick={() => setMobileOpen(false)} />}
     <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand-row"><BrandLogo to={`/${role}/dashboard`} subtitle={roleLabel} compact /><button aria-label="Close menu" className="icon-button mobile-close" onClick={() => setMobileOpen(false)}><X size={18} /></button></div>

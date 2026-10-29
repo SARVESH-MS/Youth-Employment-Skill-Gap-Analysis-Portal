@@ -1,12 +1,16 @@
 'use strict';
 
 const { ActivityLog, Streak } = require('../models');
+const readinessScoreService = require('./readinessScore.service');
 const { localDay } = require('../utils/timezone');
 
 const recordActivity = async (user, action, { entityType, entityId, skill, weight = 1, meta = {} } = {}) => {
   const timezone = user.timezone || 'Asia/Kolkata';
   const day = localDay(new Date(), timezone);
   await ActivityLog.create({ user: user._id, role: user.role, action, entityType, entityId, skill, localDay: day, weight, meta });
+  if (user.role === 'student' && skill && ['lesson-completed', 'practice-submitted', 'coding-submitted', 'test-completed'].includes(action)) {
+    await readinessScoreService.recordSkillEngagement(user._id, skill);
+  }
   if (user.role !== 'student' || !['lesson-completed', 'practice-submitted', 'coding-submitted', 'test-completed'].includes(action)) return;
 
   let streak = await Streak.findOne({ user: user._id });

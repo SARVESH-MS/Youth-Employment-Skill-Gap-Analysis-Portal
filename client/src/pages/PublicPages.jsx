@@ -1,44 +1,217 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, BookOpenCheck, BriefcaseBusiness, ChartNoAxesCombined, Check, Compass, GraduationCap, Layers3, LockKeyhole, Sparkles, UsersRound } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowRight, ArrowUpRight, BookOpenCheck, Brain, BriefcaseBusiness, ChartNoAxesCombined, Check, Cloud, Code2, Compass, Database, GraduationCap, Layers3, LockKeyhole, MoveDown, ShieldCheck, Sparkles, UsersRound } from 'lucide-react';
 import api, { dataOf, errorMessage } from '../api/client';
 import { useAuth } from '../app/AuthContext';
 import BrandLogo from '../components/BrandLogo';
-import GoogleSignIn from '../components/GoogleSignIn';
 import { Field, FormInput, FormSelect, Loading } from '../components/Common';
 import ThemePicker from '../components/ThemePicker';
 
-const highlights = [
-  { icon: ChartNoAxesCombined, title: 'Know your next step', text: 'See how your current skills line up with a career path and focus your time where it counts.' },
-  { icon: BookOpenCheck, title: 'Learn by doing', text: 'Use guided lessons, practice, and assessments that turn concepts into evidence of progress.' },
-  { icon: BriefcaseBusiness, title: 'Meet the right teams', text: 'Discover opportunities and share your profile with companies on your terms.' },
+const journeySteps = [
+  { icon: Compass, number: '01', title: 'Choose a direction', text: 'Explore technology careers and see the skills connected to each path.' },
+  { icon: BookOpenCheck, number: '02', title: 'Learn with purpose', text: 'Use guided materials and practice that connect to your next skill.' },
+  { icon: ChartNoAxesCombined, number: '03', title: 'Build evidence', text: 'Let lessons and assessments show what is getting stronger over time.' },
+  { icon: BriefcaseBusiness, number: '04', title: 'Meet opportunity', text: 'Share your profile with participating teams and manage applications.' },
+];
+
+const careerDomains = [
+  { icon: Code2, title: 'Frontend development', label: 'DESIGN THE EXPERIENCE', text: 'Build accessible, responsive interfaces for the web.', skills: ['HTML & CSS', 'JavaScript', 'React'], tone: 'mint' },
+  { icon: Database, title: 'Backend engineering', label: 'POWER THE PRODUCT', text: 'Create APIs, services, and the data systems behind applications.', skills: ['Node.js', 'REST APIs', 'MongoDB'], tone: 'blue' },
+  { icon: Brain, title: 'Data & AI', label: 'FIND THE SIGNAL', text: 'Use data and machine learning to answer useful questions.', skills: ['Python', 'SQL', 'Analytics'], tone: 'amber' },
+  { icon: Cloud, title: 'Cloud & security', label: 'KEEP SYSTEMS READY', text: 'Understand reliable infrastructure, networks, and security basics.', skills: ['Linux', 'Cloud basics', 'Security'], tone: 'violet' },
 ];
 
 export function LandingPage() {
   useEffect(() => {
     document.documentElement.classList.add('landing-page-active');
-    return () => document.documentElement.classList.remove('landing-page-active');
+    const revealItems = document.querySelectorAll('.yg-reveal');
+    const animatedSections = document.querySelectorAll('.yg-cinematic-hero, .yg-journey-section, .yg-domains-section, .yg-roadmap-section, .yg-employer-section, .yg-final-section');
+    let observer;
+    let sectionObserver;
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      revealItems.forEach((item) => item.classList.add('is-revealed'));
+      animatedSections.forEach((section) => section.classList.add('is-in-view'));
+    } else {
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-revealed');
+          observer.unobserve(entry.target);
+        });
+      }, { threshold: 0.18, rootMargin: '0px 0px -24px 0px' });
+      revealItems.forEach((item) => observer.observe(item));
+      sectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => entry.target.classList.toggle('is-in-view', entry.isIntersecting));
+      }, { rootMargin: '220px 0px' });
+      animatedSections.forEach((section) => sectionObserver.observe(section));
+    }
+    return () => {
+      observer?.disconnect();
+      sectionObserver?.disconnect();
+      animatedSections.forEach((section) => section.classList.remove('is-in-view'));
+      document.documentElement.classList.remove('landing-page-active');
+    };
   }, []);
 
-  return <main className="public-shell">
-    <nav className="public-nav"><BrandLogo className="landing-brand" /><div className="public-nav-links"><a href="#how-it-works">How it works</a><a href="#domains">Career paths</a><ThemePicker compact /><Link to="/login" className="nav-signin">Sign in</Link><Link to="/register/student" className="button button-primary button-small">Get started<ArrowRight size={15} /></Link></div><Link to="/login" className="mobile-signin">Sign in</Link></nav>
-    <section className="hero-wrap">
+  return <main className="public-shell yg-home">
+    <nav className="public-nav yg-overlay-nav"><BrandLogo className="landing-brand" variant="inverse" /><div className="public-nav-links"><a href="#how-it-works">How it works</a><a href="#domains">Career paths</a><ThemePicker compact /><Link to="/login" className="nav-signin">Sign in</Link><Link to="/register/student" className="button button-primary button-small">Get started<ArrowRight size={15} /></Link></div><Link to="/login" className="mobile-signin">Sign in</Link></nav>
+    <section className="hero-wrap yg-cinematic-hero">
       <div className="hero-copy"><div className="pill"><Sparkles size={14} />A clearer path into tech</div><h1>Build your skills.<br /><em>Find your next role.</em></h1><p className="hero-lede">A practical place to see what you know, learn what you need, and connect with teams looking for your potential.</p><div className="hero-actions"><Link to="/register/student" className="button button-primary button-large">Start your journey<ArrowRight size={17} /></Link><a href="#how-it-works" className="button button-quiet button-large">Explore the platform<ArrowUpRight size={17} /></a></div><div className="hero-proof"><div className="avatar-stack"><span>AS</span><span>RK</span><span>NP</span><span>+60</span></div><div><strong>Built for your next step</strong><small>Learn, show your progress, and grow with confidence.</small></div></div></div>
-      <div className="hero-visual" aria-label="YESGAP skill progress dashboard illustration"><div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" /><div className="hero-window"><div className="hero-window-head"><span className="window-dots"><i /><i /><i /></span><span>My career readiness</span><span className="hero-live"><i /> LIVE</span></div><div className="hero-readiness"><div><span className="eyebrow">FULL STACK DEVELOPMENT</span><strong>72<small>%</small></strong><span className="readiness-change">↑ 8% this month</span></div><div className="readiness-ring"><div><strong>72</strong><small>READY</small></div></div></div><div className="hero-progress-card"><div className="mini-card-head"><span>Your skills</span><small>7 of 10 on track</small></div><div className="skill-line"><span><i className="skill-dot complete" /> HTML</span><b>Strong</b><div className="mini-meter"><i style={{ width: '100%' }} /></div></div><div className="skill-line"><span><i className="skill-dot complete" /> JavaScript</span><b>Strong</b><div className="mini-meter"><i style={{ width: '89%' }} /></div></div><div className="skill-line"><span><i className="skill-dot in-progress" /> React</span><b>In progress</b><div className="mini-meter"><i style={{ width: '52%' }} /></div></div><div className="skill-line"><span><i className="skill-dot missing" /> Node.js</span><b>Up next</b><div className="mini-meter"><i style={{ width: '18%' }} /></div></div></div><div className="hero-float-note"><div className="float-check"><Check size={15} /></div><span><strong>Nice work, Asha</strong><small>3 learning days in a row</small></span><span className="float-streak">✦ 3</span></div><div className="hero-spark spark-a">✦</div><div className="hero-spark spark-b">✧</div></div></div>
+      <div className="hero-visual yg-immersive-world" role="img" aria-label="Animated landscape with a glowing gateway built from skill modules">
+        <div className="yg-world-haze" />
+        <svg className="yg-landscape-svg" viewBox="0 0 1440 860" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="ygSky" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#182829" /><stop offset=".54" stopColor="#30403c" /><stop offset="1" stopColor="#172421" /></linearGradient>
+            <linearGradient id="ygFarRidge" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#86918a" stopOpacity=".37" /><stop offset="1" stopColor="#303f3b" stopOpacity=".12" /></linearGradient>
+            <linearGradient id="ygGround" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#52645a" stopOpacity=".6" /><stop offset="1" stopColor="#111d1b" /></linearGradient>
+            <linearGradient id="ygTileTop" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#c8d4c9" /><stop offset="1" stopColor="#74877b" /></linearGradient>
+            <linearGradient id="ygTileLeft" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#64776d" /><stop offset="1" stopColor="#334640" /></linearGradient>
+            <linearGradient id="ygTileRight" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#445950" /><stop offset="1" stopColor="#1f302c" /></linearGradient>
+            <radialGradient id="ygPortalLight"><stop stopColor="#edffdd" stopOpacity=".98" /><stop offset=".23" stopColor="#9be6b5" stopOpacity=".65" /><stop offset="1" stopColor="#63d4b2" stopOpacity="0" /></radialGradient>
+            <filter id="ygPortalBlur"><feGaussianBlur stdDeviation="18" /></filter>
+            <filter id="ygSoftShadow"><feGaussianBlur stdDeviation="9" /></filter>
+          </defs>
+          <rect width="1440" height="860" fill="url(#ygSky)" />
+          <circle cx="930" cy="390" r="250" fill="url(#ygPortalLight)" opacity=".66" />
+          <g className="yg-stage-stars" fill="#e7eee3">
+            <circle cx="248" cy="161" r="1.6" /><circle cx="378" cy="266" r="1.2" /><circle cx="512" cy="128" r="1.5" /><circle cx="660" cy="221" r="1" /><circle cx="812" cy="146" r="1.6" /><circle cx="1118" cy="153" r="1.2" /><circle cx="1256" cy="294" r="1.7" /><circle cx="1163" cy="548" r="1.2" /><circle cx="541" cy="560" r="1.3" /><circle cx="332" cy="461" r="1.1" />
+          </g>
+          <path className="yg-far-land" d="M0 495 90 420 160 439 264 323 352 415 446 303 525 389 638 260 744 390 822 311 914 387 1013 270 1125 409 1228 315 1350 418 1440 363 1440 860 0 860Z" fill="url(#ygFarRidge)" />
+          <path className="yg-front-land" d="M0 564 122 516 228 545 356 451 485 535 597 473 710 513 822 458 942 504 1077 447 1207 508 1330 438 1440 474 1440 860 0 860Z" fill="url(#ygGround)" />
+          <g className="yg-terrain-contours" fill="none" stroke="#b4c2b0" strokeOpacity=".19">
+            <path d="M-30 585C148 476 248 594 409 518s243-67 349-13 194 68 330-27 217-115 380-80" />
+            <path d="M-30 614C148 505 248 623 409 547s243-67 349-13 194 68 330-27 217-115 380-80" />
+            <path d="M-30 644C148 535 248 653 409 577s243-67 349-13 194 68 330-27 217-115 380-80" />
+            <path d="M-30 674C148 565 248 683 409 607s243-67 349-13 194 68 330-27 217-115 380-80" />
+            <path d="M93 823c96-112 200-172 327-146s197 59 319-1 172-158 323-163 237 48 410-90" />
+            <path d="M128 845c96-112 200-172 327-146s197 59 319-1 172-158 323-163 237 48 410-90" />
+          </g>
+          <g className="yg-perspective-grid" fill="none" stroke="#c0d0c2">
+            <path d="M0 860 690 476M180 860 740 472M360 860 790 466M540 860 835 461M720 860 880 458M900 860 925 456M1080 860 970 458M1260 860 1015 461M1440 860 1060 466" />
+            <path d="M0 585H1440M0 625H1440M0 675H1440M0 738H1440M0 812H1440" />
+          </g>
+          <path className="yg-career-trail-glow" d="M55 755C228 700 362 701 508 638s236-88 326-118 151-38 195-103 84-121 172-169" />
+          <path className="yg-career-trail" d="M55 755C228 700 362 701 508 638s236-88 326-118 151-38 195-103 84-121 172-169" />
+          <g className="yg-trail-points"><circle cx="202" cy="713" r="5" /><circle cx="511" cy="638" r="5" /><circle cx="834" cy="525" r="7" /><circle cx="1024" cy="435" r="5" /><circle cx="1201" cy="365" r="5" /></g>
+          <ellipse cx="935" cy="555" rx="228" ry="47" fill="#101916" opacity=".72" filter="url(#ygSoftShadow)" />
+          <ellipse cx="935" cy="548" rx="202" ry="29" fill="#bdd4c2" opacity=".16" />
+          <path className="yg-gateway-aura" d="M852 541V424a83 83 0 0 1 166 0v117" />
+          <path className="yg-gateway-beam" d="M935 526V425" />
+          <path className="yg-gateway-arch" d="M852 535V424a83 83 0 0 1 166 0v111" />
+          <g className="yg-module-stack">
+            {[[770,520],[830,520],[890,520],[950,520],[1010,520],[1070,520],[770,475],[830,475],[1010,475],[1070,475],[770,430],[830,430],[1010,430],[1070,430],[790,385],[850,385],[990,385],[1050,385],[820,340],[880,340],[940,340],[1000,340],[850,295],[910,295],[970,295],[880,250],[940,250]].map(([x, y], index) => (
+              <g key={index} className={'yg-portal-block yg-tile-tone-' + (index % 4)} transform={'translate(' + x + ' ' + y + ')'} style={{ animationDelay: (index * 0.075) + 's' }}>
+                <path className="yg-tile-top" d="M0 0 29-17 58 0 29 17Z" />
+                <path className="yg-tile-left" d="M0 0 29 17V47L0 30Z" />
+                <path className="yg-tile-right" d="M29 17 58 0V30L29 47Z" />
+                <path className="yg-tile-edge" d="M0 0 29-17 58 0 58 30 29 47 0 30Z" />
+              </g>
+            ))}
+          </g>
+          <g className="yg-floating-shards">
+            <path d="m786 308 28-16 28 16-28 16z" /><path d="m786 308 28 16v29l-28-16z" /><path d="m814 324 28-16v29l-28 16z" />
+            <path d="m1027 262 24-14 24 14-24 14z" /><path d="m1027 262 24 14v26l-24-14z" /><path d="m1051 276 24-14v26l-24 14z" />
+          </g>
+        </svg>
+        <div className="yg-stage-vignette" />
+        <div className="yg-stage-copy yg-stage-copy-right"><span>CAREER EXPLORATION / 01</span><small>LEARNING BECOMES<br />A VISIBLE PATH FORWARD</small></div>
+        <div className="yg-stage-copy yg-stage-copy-bottom"><span>SKILL MODULES</span><i /><span>CONNECTED TO OPPORTUNITY</span></div>
+        <div className="yg-scene-label yg-scene-label-html"><i /> HTML + CSS</div>
+        <div className="yg-scene-label yg-scene-label-js"><i /> JAVASCRIPT</div>
+        <div className="yg-scene-label yg-scene-label-role"><i /> YOUR NEXT ROLE</div>
+        <div className="yg-stage-counter"><span>01</span><i /><span>04</span></div>
+      </div>
+      <a className="yg-hero-scroll" href="#how-it-works"><span>SCROLL TO DISCOVER</span><MoveDown size={15} /></a>
     </section>
-    <section className="trust-strip"><span>ONE WORKSPACE FOR YOUR CAREER JOURNEY</span><div><span><GraduationCap size={18} /> Learn with direction</span><i /><span><Layers3 size={18} /> Build real skills</span><i /><span><UsersRound size={18} /> Connect with employers</span></div></section>
-    <section className="section-pad landing-features" id="how-it-works"><div className="section-intro"><div className="eyebrow">A path that makes sense</div><h2>From “where do I start?”<br /><em>to “I’m ready.”</em></h2><p>Keep your learning connected to the roles you want, with a clear view of what is improving and what comes next.</p></div><div className="feature-grid">{highlights.map((item, index) => <motion.article className="feature-card" key={item.title} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }} transition={{ delay: index * 0.08 }}><div className={`feature-icon feature-icon-${index}`}><item.icon size={21} /></div><h3>{item.title}</h3><p>{item.text}</p><span className="feature-index">0{index + 1}</span></motion.article>)}</div></section>
-    <section className="path-section" id="domains"><div className="path-art"><div className="path-blob"><Compass size={116} strokeWidth={1.1} /></div><span className="path-label label-left">Frontend</span><span className="path-label label-right">Cloud</span><span className="path-label label-bottom">Data & AI</span><div className="path-stamp">YOUR<br />PACE<span>↗</span></div></div><div className="path-copy"><div className="eyebrow">Room to grow</div><h2>A career path that starts <em>with you.</em></h2><p>Explore technology domains, understand the skills employers ask for, and build a roadmap that fits your current experience.</p><div className="path-list"><div><span>01</span><p><strong>Choose a direction</strong><small>See what different roles have in common.</small></p></div><div><span>02</span><p><strong>Learn in one place</strong><small>Keep lessons, practice, and progress together.</small></p></div><div><span>03</span><p><strong>Show your growth</strong><small>Share a clear, skill-based profile with employers.</small></p></div></div><Link className="text-link" to="/register/student">Explore career paths <ArrowRight size={16} /></Link></div></section>
-    <section className="cta-section"><div><div className="eyebrow">Your next step can start today</div><h2>Make your potential<br /><em>visible.</em></h2><p>Build a steady, practical path from where you are to where you want to go.</p><Link className="button button-dark button-large" to="/register/student">Create your free profile<ArrowRight size={17} /></Link></div><div className="cta-decoration"><div className="cta-card cta-card-back">LEARNING PATH <span>↗</span><i /><i /><i /></div><div className="cta-card cta-card-front"><span className="cta-star">✦</span><small>YOUR NEXT SKILL</small><strong>React</strong><span className="cta-card-pill">Recommended</span></div><div className="cta-ring" /></div></section>
-    <footer className="public-footer"><BrandLogo className="landing-brand" /><p>Helping young people move forward in technology.</p><div><Link to="/register/company">For companies</Link><Link to="/login">Sign in</Link><span>© 2026 YESGAP</span></div></footer>
+    <section className="yg-journey-section" id="how-it-works">
+      <div className="yg-content-width">
+        <div className="yg-section-heading yg-journey-heading">
+          <div><span className="yg-kicker">A connected path forward</span><h2>From first question<br />to <em>real opportunity.</em></h2></div>
+          <p>Learning feels more useful when you can see where it leads. YESGAP connects career exploration, guided learning, practice, progress, and hiring in one place.</p>
+        </div>
+        <div className="yg-journey-stages">
+          <div className="yg-journey-track" aria-hidden="true"><i /></div>
+          {journeySteps.map((step, index) => { const Icon = step.icon; return <article className="yg-journey-stage yg-reveal" style={{ '--yg-reveal-delay': `${index * 90}ms` }} key={step.number}>
+            <div className="yg-stage-icon"><Icon size={22} strokeWidth={1.6} /><span>{step.number}</span></div>
+            <span className="yg-stage-kicker">CHAPTER {step.number}</span><h3>{step.title}</h3><p>{step.text}</p>
+          </article>; })}
+        </div>
+        <div className="yg-journey-footnote"><span className="yg-live-dot" /> YOUR PROGRESS COMES FROM YOUR ACTIVITY ON THE PLATFORM</div>
+      </div>
+    </section>
+
+    <section className="yg-domains-section" id="domains">
+      <div className="yg-content-width">
+        <div className="yg-section-heading yg-domains-heading">
+          <div><span className="yg-kicker">Explore the technology landscape</span><h2>Choose a direction.<br /><em>Keep room to grow.</em></h2></div>
+          <p>Start with a domain that interests you. See the skills it involves and build a learning path around your goals.</p>
+        </div>
+        <div className="yg-domain-grid">
+          {careerDomains.map((domain, index) => { const Icon = domain.icon; return <article className={'yg-domain-card yg-domain-' + domain.tone + ' yg-reveal'} style={{ '--yg-reveal-delay': `${index * 70}ms` }} key={domain.title}>
+            <div className="yg-domain-card-top"><span className="yg-domain-icon"><Icon size={21} strokeWidth={1.6} /></span><span>0{index + 1} / 04</span></div>
+            <span className="yg-domain-kicker">{domain.label}</span><h3>{domain.title}</h3><p>{domain.text}</p>
+            <div className="yg-domain-skills">{domain.skills.map((skill) => <span key={skill}>{skill}</span>)}</div>
+            <Link to="/register/student" className="yg-domain-link">Explore this direction <ArrowUpRight size={15} /></Link>
+          </article>; })}
+        </div>
+        <div className="yg-domain-note"><Compass size={16} /><span>You can change your career direction as you learn more about the work.</span></div>
+      </div>
+    </section>
+
+    <section className="yg-roadmap-section">
+      <div className="yg-content-width yg-roadmap-layout">
+        <div className="yg-roadmap-art" aria-hidden="true">
+          <div className="yg-roadmap-halo" /><svg viewBox="0 0 640 460" preserveAspectRatio="xMidYMid meet">
+            <path className="yg-roadmap-contour" d="M-20 350C86 265 150 326 225 271s105-110 196-87 125 37 214-34 111-72 151-59M-20 382C86 297 150 358 225 303s105-110 196-87 125 37 214-34 111-72 151-59M35 467c38-97 111-144 201-129s137 51 215-3 99-106 183-119" />
+            <path className="yg-roadmap-path-glow" d="M56 351C149 329 180 280 247 247s106-28 155-42 70-53 106-81 66-34 112-58" /><path className="yg-roadmap-path" d="M56 351C149 329 180 280 247 247s106-28 155-42 70-53 106-81 66-34 112-58" />
+            <circle className="yg-roadmap-dot" cx="56" cy="351" r="6" /><circle className="yg-roadmap-dot" cx="247" cy="247" r="6" /><circle className="yg-roadmap-dot" cx="402" cy="205" r="8" /><circle className="yg-roadmap-dot" cx="508" cy="124" r="6" /><circle className="yg-roadmap-dot" cx="620" cy="66" r="6" />
+          </svg>
+          <div className="yg-roadmap-core"><Layers3 size={30} /><span>YOUR<br />LEARNING PATH</span></div>
+          <div className="yg-roadmap-pin yg-roadmap-pin-a"><Check size={12} /><span>Learn</span></div><div className="yg-roadmap-pin yg-roadmap-pin-b"><BookOpenCheck size={13} /><span>Practice</span></div><div className="yg-roadmap-pin yg-roadmap-pin-c"><ChartNoAxesCombined size={13} /><span>Progress</span></div>
+          <span className="yg-roadmap-coordinate">ONE STEP AT A TIME / AT YOUR PACE</span>
+        </div>
+        <div className="yg-roadmap-copy">
+          <span className="yg-kicker">Learning that adds up</span><h2>Know what to focus on.<br /><em>See how far you have come.</em></h2>
+          <p>YESGAP brings lessons, hands-on practice, and assessments together with your skill roadmap. Keep learning in manageable steps and revisit topics whenever you need.</p>
+          <div className="yg-roadmap-points"><div><span>01</span><p><strong>Find your next skill</strong><small>Connect what you learn to your chosen career domain.</small></p></div><div><span>02</span><p><strong>Practice as you go</strong><small>Use examples and exercises to strengthen understanding.</small></p></div><div><span>03</span><p><strong>Track real activity</strong><small>See completed lessons and assessments in your progress.</small></p></div></div>
+          <Link to="/register/student" className="yg-inline-link">Start building your path <ArrowRight size={16} /></Link>
+        </div>
+      </div>
+    </section>
+
+    <section className="yg-employer-section" id="employers">
+      <div className="yg-content-width yg-employer-layout">
+        <div className="yg-employer-copy">
+          <span className="yg-kicker">For companies and hiring teams</span><h2>Meet people building<br />skills for <em>what's next.</em></h2>
+          <p>YESGAP gives hiring teams a workspace to share opportunities, discover early-career talent, review applications, and coordinate recruitment rounds.</p>
+          <div className="yg-employer-list"><span><Check size={14} /> Explore candidates by career direction and skills</span><span><Check size={14} /> Publish opportunities with clear requirements</span><span><Check size={14} /> Manage applications and interview stages</span></div>
+          <Link to="/register/company" className="yg-employer-button">Explore the hiring workspace <ArrowRight size={16} /></Link>
+        </div>
+        <div className="yg-hiring-console" aria-label="Illustration of the YESGAP hiring workspace">
+          <div className="yg-console-top"><span>YESGAP / TALENT DISCOVERY</span><span><i /> WORKSPACE PREVIEW</span></div>
+          <div className="yg-console-title"><span>HIRING WORKSPACE</span><strong>Skills with context.</strong></div>
+          <article className="yg-console-candidate"><div className="yg-console-avatar">AR</div><div><span>CAREER DIRECTION / FRONTEND</span><strong>Candidate skill profile</strong><small>Learning activity / practice / assessments</small></div><span className="yg-console-check"><Check size={14} /></span></article>
+          <div className="yg-console-connector"><i /><i /><i /></div>
+          <article className="yg-console-role"><div><BriefcaseBusiness size={16} /><span>OPEN OPPORTUNITY</span></div><strong>Associate Software Engineer</strong><small>Requirements shared by the hiring team</small><footer><span>JavaScript</span><span>APIs</span><span>Problem solving</span></footer></article>
+          <div className="yg-console-foot"><ShieldCheck size={14} /><span>PROFILE VISIBILITY STAYS IN THE CANDIDATE'S CONTROL</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section className="yg-final-section">
+      <div className="yg-final-glow" /><div className="yg-final-orbit yg-final-orbit-a" /><div className="yg-final-orbit yg-final-orbit-b" />
+      <div className="yg-final-content"><span className="yg-kicker">Start where you are</span><h2>Make your next step<br /><em>one you can see.</em></h2><p>Explore a direction, build skills with purpose, and move toward opportunities at your own pace.</p><div><Link to="/register/student" className="yg-final-button">Create your student profile <ArrowRight size={17} /></Link><Link to="/login" className="yg-final-login">Already have an account? Sign in <ArrowUpRight size={15} /></Link></div></div>
+      <div className="yg-final-coordinate">YESGAP / LEARN / PRACTICE / GROW / CONNECT</div>
+    </section>
+
+    <footer className="yg-footer"><div className="yg-content-width"><div className="yg-footer-main"><div className="yg-footer-brand"><BrandLogo className="landing-brand" variant="inverse" /><p>A practical path from learning to opportunity.</p></div><div className="yg-footer-col"><span>EXPLORE</span><a href="#how-it-works">How it works</a><a href="#domains">Career paths</a><a href="#employers">For employers</a></div><div className="yg-footer-col"><span>GET STARTED</span><Link to="/register/student">Join as a student</Link><Link to="/register/company">Join as a company</Link><Link to="/login">Sign in</Link></div><div className="yg-footer-col yg-footer-note"><span>THE YESGAP JOURNEY</span><small>Learn with direction.</small><small>Practice with purpose.</small><small>Move forward with confidence.</small></div></div><div className="yg-footer-bottom"><span>(c) 2026 YESGAP</span><span>Youth Employment Skill Gap Analysis Platform</span><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Back to top <MoveDown size={13} /></a></div></div></footer>
   </main>;
 }
 
 export function AuthPage({ mode = 'login' }) {
   const { role: routeRole } = useParams();
   const navigate = useNavigate();
-  const { login, googleLogin, register } = useAuth();
+  const { login, register } = useAuth();
   const [role, setRole] = useState(['student', 'company', 'admin'].includes(routeRole) ? routeRole : 'student');
   const [catalog, setCatalog] = useState({ domains: [], skills: [] });
   const [loadingCatalog, setLoadingCatalog] = useState(mode === 'register');
@@ -87,15 +260,6 @@ export function AuthPage({ mode = 'login' }) {
     finally { setBusy(false); }
   };
 
-  const onGoogleCredential = async (credential) => {
-    setError(''); setBusy(true);
-    try {
-      const user = await googleLogin({ credential, role, password: values.password });
-      navigate(`/${user.role}/dashboard`, { replace: true });
-    } catch (reason) { setError(errorMessage(reason)); }
-    finally { setBusy(false); }
-  };
-
   return <main className="auth-shell"><div className="auth-visual"><BrandLogo className="brand-on-dark" /><div className="auth-visual-content"><div className="eyebrow">A practical path into technology</div><h1>Grow into the<br /><em>work you want.</em></h1><p>Build a skill plan that makes your next move easier to see.</p><div className="auth-quote-card"><span>“</span><p>Every project starts with one small step. Keep going, and your progress will speak for you.</p><small>THE YESGAP APPROACH</small></div></div><span className="auth-visual-foot">LEARN · PRACTICE · MOVE FORWARD</span><div className="auth-visual-shape" /></div><section className="auth-panel"><div className="auth-panel-top"><BrandLogo className="mobile-brand" /><ThemePicker compact /><span>Already have an account? <Link to="/login">Sign in</Link></span></div><div className="auth-form-wrap"><div className="eyebrow">{isRegister ? 'Create your workspace' : 'Welcome back'}</div><h2>{isRegister ? `Join as a ${role}` : 'Sign in to YESGAP'}</h2><p>{isRegister ? 'Set up a profile that grows with your work.' : 'Continue building toward your next opportunity.'}</p>
       {isRegister && <div className="account-type-switch" role="tablist" aria-label="Account type">{['student', 'company'].map((item) => <button key={item} type="button" role="tab" aria-selected={role === item} className={role === item ? 'active' : ''} onClick={() => { setRole(item); setError(''); }}>{item === 'student' ? 'Student' : 'Company'}</button>)}</div>}
       {!isRegister && <div className="account-type-switch" role="tablist" aria-label="Sign-in role">{['student', 'company', 'admin'].map((item) => <button key={item} type="button" role="tab" aria-selected={role === item} className={role === item ? 'active' : ''} onClick={() => setRole(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}</div>}
@@ -123,6 +287,5 @@ export function AuthPage({ mode = 'login' }) {
         <button className="button button-primary button-submit" type="submit" disabled={busy}>{busy ? 'Please wait…' : isRegister ? 'Create your account' : 'Sign in'}{!busy && <ArrowRight size={17} />}</button>
         {!isRegister && <div className="demo-credentials"><LockKeyhole size={15} /><span><strong>Demo access</strong> Student: <code>demo-student-001</code> · Company: <code>demo-company-001</code> · Password: <code>Demo@12345</code></span></div>}
       </form>}
-      {!isRegister && role !== 'admin' && <div className="google-login-section"><div className="google-login-divider"><span>or continue with</span></div><p className="google-login-note">For the first Google sign-in, enter your YESGAP password above to securely link your account. New here? Create a profile first.</p><GoogleSignIn onCredential={onGoogleCredential} busy={busy} /></div>}
       <div className="auth-bottom">{isRegister ? <>Already registered? <Link to="/login">Sign in instead</Link></> : <>New to YESGAP? <Link to="/register/student">Create a student profile</Link></>}</div></div><div className="auth-legal">By continuing, you agree to use the platform respectfully and keep account details private.</div></section></main>;
 }

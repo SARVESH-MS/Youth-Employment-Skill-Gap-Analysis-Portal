@@ -240,20 +240,6 @@ const LESSON_ENGAGEMENT = Object.freeze({
   COMPLETION_QUIZ_PASS_RATIO: 0.6,
 });
 
-/**
- * Career readiness weighting. Surfaced verbatim in the UI so the score is
- * explainable and never feels arbitrary.
- */
-const CAREER_READINESS_WEIGHTS = Object.freeze({
-  skillCompletion: 0.32,
-  learningProgress: 0.15,
-  practicePerformance: 0.12,
-  codingPerformance: 0.12,
-  assessmentPerformance: 0.17,
-  consistency: 0.07,
-  streak: 0.05,
-});
-
 /** Default IANA timezone for streak day boundaries (user's local timezone). */
 const DEFAULT_TIMEZONE = 'Asia/Kolkata';
 
@@ -308,7 +294,6 @@ module.exports = {
   NOTIFICATION_AUDIENCE,
   ACTIVITY_ACTION,
   LESSON_ENGAGEMENT,
-  CAREER_READINESS_WEIGHTS,
   DEFAULT_TIMEZONE,
   PAGINATION,
   THEMES,

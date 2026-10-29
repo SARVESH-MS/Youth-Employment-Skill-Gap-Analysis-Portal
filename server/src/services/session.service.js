@@ -8,8 +8,8 @@ const { createCsrfToken, verifyCsrfToken } = require('../utils/csrf');
 
 const cookieOptions = (maxAge) => ({
   httpOnly: true,
-  secure: env.isProduction,
-  sameSite: 'strict',
+  secure: env.isProduction || env.auth.cookieSameSite === 'none',
+  sameSite: env.auth.cookieSameSite,
   path: '/api',
   ...(maxAge ? { maxAge } : {}),
 });

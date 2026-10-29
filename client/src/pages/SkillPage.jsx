@@ -11,7 +11,7 @@ import { acceptCompletion, autocompletion, completionStatus } from '@codemirror/
 import { syntaxTree } from '@codemirror/language';
 import { Decoration, keymap, ViewPlugin, WidgetType } from '@codemirror/view';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, BookOpenCheck, Bookmark, Check, CheckCircle2, Clock3, Code2, Copy, FileQuestion, Play, Send, Sparkles, SquareTerminal, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, BookOpenCheck, Bookmark, Check, CheckCircle2, Clock3, Code2, Copy, FileQuestion, Play, Send, Sparkles, SquareTerminal, Target, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api, { dataOf, errorMessage } from '../api/client';
 import { useAuth } from '../app/AuthContext';
@@ -180,7 +180,7 @@ export function CodingRoundRunner({ session, onClose }) {
     if (busy || roundFinished || timeLeft <= 0) return;
     setBusy(true); setError('');
     try {
-      const response = await api.post(`/student/coding/questions/${question._id}/execute`, { language, sourceCode: source, kind, roundId: session.codingRoundId });
+      const response = await api.post(`/student/coding/questions/${question._id}/execute`, { language, sourceCode: source, kind, roundId: session.codingRoundId }, { timeout: 65_000 });
       setResult(dataOf(response));
     } catch (reason) { setError(errorMessage(reason)); }
     finally { setBusy(false); }

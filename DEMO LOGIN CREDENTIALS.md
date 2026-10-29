@@ -1,6 +1,6 @@
 ﻿# YESGAP Demo Login Credentials
 
-These are the default local development demo accounts. Do not use the shared demo passwords in production. Seed counts and credentials may be overridden through environment variables.
+These are the default local development demo accounts. Do not use the shared demo passwords in production. Seed counts and credentials may be overridden through environment variables. Passwords are hashed in MongoDB and the seed only sets them when an account is first created; it will not reset a password you changed later. A normal `npm run seed` preserves existing learner profiles and learning history. Use `npm run seed:fresh` only when you intentionally want to rebuild the demo accounts and their data.
 
 | Role | Username | Email | Password | Full name |
 | --- | --- | --- | --- | --- |
@@ -169,4 +169,53 @@ These are the default local development demo accounts. Do not use the shared dem
 | Approved company | `demo-company-099` | `company099@demo.yesgap.local` | `Demo@12345` | Meera Thomas |
 | Approved company | `demo-company-100` | `company100@demo.yesgap.local` | `Demo@12345` | Meera Verma |
 
-The super-administrator username, email, password, and full name use the local defaults shown above; `INITIAL_ADMIN_*` variables can override them. The demo password for generated administrators, students, and companies can be changed with `SEED_DEMO_PASSWORD`.
+The super-administrator username, email, password, and full name use the local defaults shown above; `INITIAL_ADMIN_*` variables can override them. The demo password for generated administrators, students, and companies can be changed with `SEED_DEMO_PASSWORD`. A password or account value changed in `server/.env` can make this list differ from the local database.
+
+## Run YESGAP (Windows PowerShell)
+
+Prerequisites: Node.js 22 or newer, npm, and MongoDB 6 or newer (local MongoDB or MongoDB Atlas). Run these commands from the project root. MongoDB must be running before seeding or starting the API.
+
+```powershell
+# Create the local environment file only if it does not already exist.
+if (!(Test-Path .\server\.env)) { Copy-Item .\.env.example .\server\.env }
+
+npm ci
+npm run seed
+npm run dev
+```
+
+Open `http://localhost:5173`. The API is at `http://localhost:5000/api`; `/api/health/ready` checks its MongoDB connection and `/api/health/live` checks that the API process is responding. Keep the terminal open while using the app. If your local MongoDB Windows service is stopped, start PowerShell as Administrator and run `Start-Service MongoDB`. If using MongoDB Atlas, set `MONGODB_URI` in `server/.env` to your Atlas connection string instead. Restart the app after changing `server/.env`.
+
+## Optional: enable the compiler and code challenges
+
+Docker Desktop with the WSL 2 backend is required for the local Piston sandbox. From the YESGAP project root, start it with:
+
+```powershell
+docker compose -f .\docker-compose.piston.yml up -d
+```
+
+On a fresh Docker installation, install the language runtimes into the persistent Piston volume. Run these commands once after Docker is up:
+
+```powershell
+$PistonCliPath = Join-Path $env:TEMP 'yesgap-piston-cli'
+if (!(Test-Path $PistonCliPath)) { git clone https://github.com/engineer-man/piston.git $PistonCliPath }
+Push-Location (Join-Path $PistonCliPath 'cli')
+npm install
+node .\index.js ppman install node
+node .\index.js ppman install python
+node .\index.js ppman install java
+node .\index.js ppman install gcc
+Pop-Location
+```
+
+Then add these values to `server/.env` and restart `npm run dev`:
+
+```dotenv
+COMPILER_SERVICE_URL=http://127.0.0.1:2000/api/v2/execute
+COMPILER_SERVICE_TOKEN=
+EXECUTION_ENABLED=true
+EXECUTION_PROVIDER=piston
+EXECUTION_SERVICE_URL=http://127.0.0.1:2000/api/v2/execute
+```
+
+This enables freeform Code Lab runs and timed coding challenges for JavaScript, Python, Java, C, and C++. The runner has job networking disabled. SQL questions require a separately configured SQL sandbox. The local Piston service does not require a public API token. For runtime installation or troubleshooting, see the [Piston setup guide](https://github.com/engineer-man/piston#readme).

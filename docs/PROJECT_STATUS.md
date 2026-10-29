@@ -1,45 +1,36 @@
-﻿# YESGAP Project Status
+# YESGAP Project Status
+
+Last reviewed: 28 October 2026
 
 ## Implemented
 
-The repository now runs as a React/Vite client and an Express/Mongoose API against one MongoDB database.
+YESGAP is a working MERN application with a React/Vite client, Express API, and MongoDB/Mongoose persistence. The product includes:
 
-- Account registration for students and companies, role-based sign-in, session refresh/revocation, company approval gates, password changes, and profile settings.
-- Shared dynamic career-domain/skill catalog, mapped domain requirements, readiness and skill-gap calculations, student dashboard and roadmap.
-- Learning modules with subtopics, examples, checkpoint questions, engagement-based completion, bookmarks, and personal notes.
-- Official public documentation references mapped to all 20 catalog skills and displayed as optional further reading; core learning material remains inside YESGAP.
-- Scenario practice and question-bank assessments with stored attempts, timed rounds, score breakdowns, weak-topic summaries, and integrity events.
-- Isolated coding practice with language-specific starter code, safe public/hidden-case result shaping, contextual editor suggestions, and a runner service contract.
-- Skill-based candidate search, company opportunity posts, invitations, student responses, contact unlock after acceptance, flexible MCQ/interview stages, timed coding recruitment challenges, recorded outcomes, in-app inbox, and complaints.
-- Admin dashboards and CRUD for domains, skills, domain links, learning modules, practice/coding/assessment banks, company approvals, accounts, complaints, announcements, and audit/activity views.
-- Resume upload/download through MongoDB GridFS with PDF/DOCX type and size controls.
-- A signed-in floating YESGAP assistant backed by Gemini, with server-only API-key configuration, per-user rate limiting, short in-memory chat history, and no saved profile, progress, or contact data sent to the model.
-- A development seed, responsive multi-role workspaces, theme options, loading/error/empty states, and reduced-motion CSS.
+- Student, company, and administrator accounts with role checks, session refresh/revocation, CSRF protection, company approval, profile settings, and resume storage in MongoDB GridFS.
+- A shared career-domain/skill catalog, roadmap, skill-gap calculation, learning modules, checkpoints, notes, bookmarks, practice, assessments, activity, and progress history.
+- A configurable career-readiness score using domain importance, evidence confidence, engagement freshness, and YESGAP opportunity demand. Its calculation reads history without writing per-user state; assessment results update verification when submitted.
+- Company opportunity and candidate workflows, acceptance-gated contact details, MCQ and coding recruitment rounds, in-portal notifications, complaints, and admin operations.
+- A Gemini assistant configured server-side and optional through `GEMINI_API_KEY`.
+- Code Lab execution through a self-hosted Piston-compatible API, plus a Piston adapter for challenge and recruitment runs. Code runs inside the isolated Piston service, never in Express. SQL challenges need a separate SQL sandbox.
+- A safe repeatable demo seed, an explicit `seed:fresh` reset, and CI jobs for server unit tests and the client production build.
 
-## Current source layout
+## Learning content
 
-```text
-docs/                    plan and implementation status
-server/src/config/       MongoDB, environment, constants
-server/src/middleware/   authentication and errors
-server/src/models/        Mongoose schemas
-server/src/repositories/  data access
-server/src/routes/        auth, platform and admin APIs
-server/src/services/      sessions, progress, skill gap, activity, notices
-server/src/seed/          catalog and demo records
-server/src/utils/         token, date, logging and API helpers
-client/src/api/           HTTP client
-client/src/app/           auth/session context
-client/src/components/    shared UI
-client/src/pages/         public, role workspace and learning pages
-```
+The seed catalog covers 8 domains and 20 skills with 3 modules and 6 lessons per skill (60 modules and 120 lessons). Lessons include explanations, worked examples, applications, exercises, model approaches, common pitfalls, and checkpoints. Each skill has links to public, first-party references. The materials are a broad starter curriculum; additional subject-matter-reviewed lessons and practice banks are needed for a complete multi-year learning library.
 
-## Required external inputs for the full product vision
+## Current local infrastructure
 
-- Public source material is available and no files are needed from the user. All seeded skill modules link to official or first-party references, and `npm run seed:references` safely fills missing links in an existing database without overwriting instructor-edited links. The seed corpus is still starter content (8 domains, 20 skills, 60 modules and sample practice/assessment questions); full curriculum depth requires continued original lesson authoring and subject-matter review.
-- The isolated compiler/runtime is intentionally not included. Practice and recruitment code execution require a separately hosted sandbox endpoint and token. Execution stays off until configured; a real candidate coding round cannot be completed until that service is connected.
-- No outbound email or social login is configured. Gemini chat is optional and requires `GEMINI_API_KEY`; career readiness calculations remain native to the application, with no external recommendation service.
+- MongoDB is the application database. The default local URI is `mongodb://127.0.0.1:27017/youth_employment_sgap`.
+- `docker-compose.piston.yml` starts a local Piston runtime on `127.0.0.1:2000` with job networking disabled and installed packages stored in a Docker volume.
+- `COMPILER_SERVICE_URL` enables the Code Lab. To enable code challenges too, set `EXECUTION_ENABLED=true`, `EXECUTION_PROVIDER=piston`, and `EXECUTION_SERVICE_URL=http://127.0.0.1:2000/api/v2/execute` in `server/.env`, then restart the API.
+- Health probes are `/api/health/live` for process liveness and `/api/health/ready` for MongoDB readiness.
 
-## Local readiness
+## Remaining work before a public launch
 
-The development database `youth_employment_sgap` has been seeded with 60 students, 100 approved demo companies, and 4 admins. All 65 backend JavaScript files pass `node --check`; the production client build completes and separates the learning/editor route, editor languages and parsers, charts, and motion dependencies into chunks. `npm audit --omit=dev` reports no production dependency vulnerabilities. Visual browser review could not be performed in this environment because no browser connection was available.
+- Choose hosting, a production MongoDB deployment, domains, HTTPS, backups, monitoring, and secret management.
+- Configure production Piston or another isolated execution service. Provide a separate SQL sandbox if SQL challenge execution is required.
+- Configure Google OAuth if desired. Outbound email is not implemented, so email verification and recovery flows need a selected mail provider and product decisions.
+- Add browser end-to-end coverage for student, company, and administrator critical paths, plus accessibility review on representative screens.
+- Expand and review lesson depth, question quality, and regional hiring content with educators and hiring partners.
+
+The continuous-integration workflow and new readiness-focused tests are present, but the current working-tree changes still need a local test and production-build run before release.

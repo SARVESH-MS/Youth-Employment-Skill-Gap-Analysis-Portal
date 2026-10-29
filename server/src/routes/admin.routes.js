@@ -7,12 +7,15 @@ const {
   User, Domain, Skill, DomainSkill, LearningModule, PracticeQuestion,
   CodingQuestion, QuestionBankItem, TestSet, Complaint, AuditLog,
   ActivityLog, Notification, Opportunity, Application, TestAttempt,
+  ReadinessSettings,
 } = require('../models');
 const { env } = require('../config/env');
 const { authenticate, requireRole } = require('../middleware/auth.middleware');
 const { notify, notifyAdmins } = require('../services/notification.service');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const { tokenSearchFilter } = require('../utils/search');
+const { getReadinessSettings, invalidateReadinessSettingsCache, refreshMarketDemand } = require('../services/marketDemand.service');
 
 const router = express.Router();
 router.use(authenticate, requireRole('admin'));
@@ -69,6 +72,39 @@ router.get('/dashboard', asyncHandler(async (_req, res) => {
   res.json({ success: true, data: { stats: { students, companies, pendingCompanies, domains, skills, opportunities, openComplaints, assessmentAttempts: tests }, recentActivity } });
 }));
 
+router.get('/readiness-settings', asyncHandler(async (_req, res) => {
+  const settings = await getReadinessSettings();
+  res.json({ success: true, data: settings });
+}));
+router.put('/readiness-settings', [
+  body('confidence.missing').isFloat({ min: 0, max: 1 }),
+  body('confidence.inProgress').isFloat({ min: 0, max: 1 }),
+  body('confidence.completed').isFloat({ min: 0, max: 1 }),
+  body('confidence.verified').isFloat({ min: 0.01, max: 1 }),
+  body('freshness.graceDays').isInt({ min: 0, max: 3650 }),
+  body('freshness.decayDurationDays').isInt({ min: 1, max: 3650 }),
+  body('freshness.decayFloor').isFloat({ min: 0, max: 1 }),
+  body('verificationPassPercentage').isInt({ min: 0, max: 100 }),
+  body('marketDemand.minMultiplier').isFloat({ min: 0.5, max: 1 }),
+  body('marketDemand.maxMultiplier').isFloat({ min: 1, max: 2 }),
+], validate, asyncHandler(async (req, res) => {
+  const { confidence, freshness, verificationPassPercentage, marketDemand } = req.body;
+  if (!(confidence.missing < confidence.inProgress && confidence.inProgress < confidence.completed && confidence.completed < confidence.verified)) {
+    throw ApiError.badRequest('Confidence values must increase from missing through verified.');
+  }
+  if (marketDemand.minMultiplier >= marketDemand.maxMultiplier) throw ApiError.badRequest('The market-demand minimum must be lower than its maximum.');
+  const before = await ReadinessSettings.findOne({ key: 'global' }).lean();
+  const settings = await ReadinessSettings.findOneAndUpdate(
+    { key: 'global' },
+    { $set: { confidence, freshness, verificationPassPercentage, marketDemand, updatedBy: req.user._id } },
+    { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+  );
+  invalidateReadinessSettingsCache();
+  const market = await refreshMarketDemand();
+  await audit(req, 'content-updated', 'ReadinessSettings', settings._id, 'Updated the dynamic career-readiness model settings', before, settings.toObject());
+  res.json({ success: true, data: settings, meta: { marketDemandComputedAt: market.computedAt } });
+}));
+
 router.get('/companies', asyncHandler(async (req, res) => {
   const filter = { role: 'company' };
   if (req.query.status && ['pending', 'approved', 'rejected'].includes(req.query.status)) filter.approvalStatus = req.query.status;
@@ -97,7 +133,7 @@ router.patch('/companies/:id/approval', [body('status').isIn(['approved', 'rejec
 router.get('/users', asyncHandler(async (req, res) => {
   const filter = {};
   if (['student', 'company', 'admin'].includes(req.query.role)) filter.role = req.query.role;
-  if (req.query.q) filter.$text = { $search: String(req.query.q).slice(0, 100) };
+  if (req.query.q) Object.assign(filter, tokenSearchFilter(req.query.q, ['fullName', 'username', 'email', 'companyName']));
   const [data, total] = await Promise.all([User.find(filter).select('-passwordHash').sort({ createdAt: -1 }).limit(250), User.countDocuments(filter)]);
   res.json({ success: true, data, meta: { total } });
 }));
@@ -152,7 +188,11 @@ router.delete('/domains/:id', asyncHandler(async (req, res) => {
   await audit(req, 'content-deleted', 'Domain', row._id, `Archived domain ${row.name}`);
   res.json({ success: true, message: 'Domain archived' });
 }));
-router.put('/domains/:id/skills', [body('skills').isArray({ max: 500 })], validate, asyncHandler(async (req, res) => {
+router.put('/domains/:id/skills', [
+  body('skills').isArray({ max: 500 }),
+  body('skills.*.importanceWeight').optional().isFloat({ min: 1, max: 5 }),
+  body('skills.*.importanceLevel').optional().isIn(['core', 'supporting']),
+], validate, asyncHandler(async (req, res) => {
   const domain = await Domain.findById(req.params.id);
   if (!domain) throw ApiError.notFound('Domain not found');
   const ids = req.body.skills.map((row) => String(row.skill));
@@ -160,7 +200,16 @@ router.put('/domains/:id/skills', [body('skills').isArray({ max: 500 })], valida
   const count = await Skill.countDocuments({ _id: { $in: ids }, isActive: true });
   if (count !== ids.length) throw ApiError.badRequest('All linked skills must exist in the shared catalog');
   await DomainSkill.deleteMany({ domain: domain._id });
-  if (req.body.skills.length) await DomainSkill.insertMany(req.body.skills.map((row, order) => ({ domain: domain._id, skill: row.skill, required: row.required !== false, weight: row.weight || 1, order: row.order ?? order, note: row.note })));
+  if (req.body.skills.length) await DomainSkill.insertMany(req.body.skills.map((row, order) => ({
+    domain: domain._id,
+    skill: row.skill,
+    required: row.required !== false,
+    weight: row.weight ?? 1,
+    importanceWeight: row.importanceWeight ?? 3,
+    importanceLevel: row.importanceLevel || (row.importanceWeight >= 4 ? 'core' : 'supporting'),
+    order: row.order ?? order,
+    note: row.note,
+  })));
   await audit(req, 'content-updated', 'Domain', domain._id, `Updated required skills for ${domain.name}`);
   res.json({ success: true, data: await DomainSkill.find({ domain: domain._id }).populate('skill', 'name slug').sort({ order: 1 }) });
 }));

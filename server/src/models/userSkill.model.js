@@ -2,8 +2,8 @@
 
 /**
  * UserSkill — a student's relationship to one skill from the central
- * catalogue. This is the only source of truth for known / in-progress /
- * completed state; the skill-gap engine reads it and never a duplicate list.
+ * catalogue. This is the source of truth for the student's learning state and
+ * assessment verification; the skill-gap engine reads it and never a duplicate list.
  */
 
 const mongoose = require('mongoose');
@@ -16,6 +16,8 @@ const userSkillSchema = new Schema(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     skill: { type: Schema.Types.ObjectId, ref: 'Skill', required: true, index: true },
     status: { type: String, enum: SKILL_STATUS_VALUES, default: SKILL_STATUS.MISSING, index: true },
+    /** Evidence-based state used only by the career-readiness confidence model. */
+    readinessState: { type: String, enum: ['missing', 'in-progress', 'completed', 'verified'], index: true },
     /** Real learning progress for this skill (0-100), driven by activity. */
     progress: { type: Number, default: 0, min: 0, max: 100 },
     /**
@@ -30,6 +32,7 @@ const userSkillSchema = new Schema(
     },
     startedAt: { type: Date },
     completedAt: { type: Date },
+    verifiedAt: { type: Date },
     lastActivityAt: { type: Date },
   },
   { timestamps: true, toJSON: { virtuals: true, transform(_d, r) { delete r.__v; return r; } } }

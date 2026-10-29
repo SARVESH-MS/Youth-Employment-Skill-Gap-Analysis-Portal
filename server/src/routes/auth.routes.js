@@ -3,7 +3,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
-const { OAuth2Client } = require('google-auth-library');
 const { body, validationResult } = require('express-validator');
 const { User, Domain, Skill, UserSkill, ActivityLog, RefreshToken } = require('../models');
 const { env } = require('../config/env');
@@ -16,7 +15,6 @@ const { recordActivity } = require('../services/activity.service');
 const { createCsrfToken, verifyCsrfToken } = require('../utils/csrf');
 
 const router = express.Router();
-const googleAuthClient = new OAuth2Client();
 const authApiRateLimit = rateLimit({
   windowMs: env.security.rateLimitWindowMinutes * 60 * 1000,
   limit: env.security.rateLimitMax,
@@ -46,7 +44,7 @@ const validate = (req, _res, next) => {
 
 router.get('/csrf', (req, res) => {
   const token = verifyCsrfToken(req.cookies?.yesgap_csrf) ? req.cookies.yesgap_csrf : createCsrfToken();
-  res.cookie('yesgap_csrf', token, { httpOnly: false, secure: env.isProduction, sameSite: 'strict', path: '/api', maxAge: 7 * 24 * 60 * 60 * 1000 });
+  res.cookie('yesgap_csrf', token, { httpOnly: false, secure: env.isProduction || env.auth.cookieSameSite === 'none', sameSite: env.auth.cookieSameSite, path: '/api', maxAge: 7 * 24 * 60 * 60 * 1000 });
   res.setHeader('X-CSRF-Token', token);
   res.json({ success: true, data: { token } });
 });
@@ -92,64 +90,6 @@ router.post('/register/company', credentialRateLimit, [
   await issue(user, req, res);
   await notifyAdmins('company-registration-pending', 'Company approval needed', `${companyName} submitted a registration for review.`, { meta: { companyId: String(user._id) }, priority: 'high' });
   res.status(201).json({ success: true, message: 'Registration received. Company access opens after admin approval.', data: serializeUser(user) });
-}));
-
-router.post('/google', credentialRateLimit, [
-  body('credential').isString().isLength({ min: 100, max: 8192 }),
-  body('role').isIn(['student', 'company']),
-  body('password').optional().isString().isLength({ max: 128 }),
-], validate, asyncHandler(async (req, res) => {
-  if (!env.auth.googleClientId) throw new ApiError(503, 'Google sign-in is not configured yet');
-
-  let payload;
-  try {
-    const ticket = await googleAuthClient.verifyIdToken({
-      idToken: req.body.credential,
-      audience: env.auth.googleClientId,
-    });
-    payload = ticket.getPayload();
-  } catch {
-    throw ApiError.unauthorized('Google sign-in could not be verified. Please try again.');
-  }
-
-  if (!payload?.sub || !payload.email || payload.email_verified !== true) {
-    throw ApiError.unauthorized('Google must provide a verified email address to sign in');
-  }
-
-  const email = payload.email.trim().toLowerCase();
-  let user = await User.findOne({ googleId: payload.sub }).select('+googleId');
-  if (user && user.role !== req.body.role) {
-    throw ApiError.forbidden('Choose the role associated with this YESGAP account');
-  }
-
-  if (!user) {
-    user = await User.findOne({ email }).select('+googleId');
-    if (!user) throw ApiError.notFound('No YESGAP account uses this Google email. Create a profile with this email first.');
-    if (user.role !== req.body.role) {
-      throw ApiError.forbidden('Choose the role associated with this YESGAP account');
-    }
-    if (user.googleId) {
-      if (user.googleId !== payload.sub) throw ApiError.conflict('This YESGAP account is linked to a different Google account');
-    } else {
-      if (!req.body.password) throw ApiError.conflict('Enter your YESGAP password above to securely link Google to this account, then try again');
-      const accountToLink = await User.findById(user._id).select('+passwordHash +googleId');
-      if (!accountToLink || !(await accountToLink.verifyPassword(req.body.password))) {
-        throw ApiError.unauthorized('Your YESGAP password is incorrect; Google was not linked');
-      }
-      accountToLink.googleId = payload.sub;
-      user = accountToLink;
-    }
-    if (user.googleId && user.googleId !== payload.sub) {
-      throw ApiError.conflict('This YESGAP account is linked to a different Google account');
-    }
-  }
-
-  if (!user.isActive) throw ApiError.forbidden('This account has been deactivated');
-  user.lastLoginAt = new Date();
-  await user.save({ validateBeforeSave: false });
-  await issue(user, req, res);
-  await recordActivity(user, 'login', { meta: { source: 'google' } });
-  res.json({ success: true, message: 'Signed in with Google', data: serializeUser(user) });
 }));
 
 router.post('/login', credentialRateLimit, [

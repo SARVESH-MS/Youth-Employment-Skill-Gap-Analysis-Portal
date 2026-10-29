@@ -36,6 +36,15 @@ const isPlaceholderSecret = (value) => !value || value.length < 32 || /^(replace
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const isProduction = NODE_ENV === 'production';
+const clientUrl = process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
+const sessionCookieSameSite = String(process.env.SESSION_COOKIE_SAME_SITE || 'strict').toLowerCase();
+const executionProvider = String(process.env.EXECUTION_PROVIDER || 'custom').toLowerCase();
+if (!['strict', 'lax', 'none'].includes(sessionCookieSameSite)) {
+  throw new Error('SESSION_COOKIE_SAME_SITE must be one of: strict, lax, none');
+}
+if (!['custom', 'piston'].includes(executionProvider)) {
+  throw new Error('EXECUTION_PROVIDER must be one of: custom, piston');
+}
 
 const env = {
   nodeEnv: NODE_ENV,
@@ -45,7 +54,7 @@ const env = {
 
   server: {
     port: toInt(process.env.PORT, 5000),
-    clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+    clientUrl,
   },
 
   db: {
@@ -63,11 +72,11 @@ const env = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     idleTimeoutMinutes: toInt(process.env.SESSION_IDLE_TIMEOUT_MINUTES, 30),
     saltRounds: toInt(process.env.BCRYPT_SALT_ROUNDS, 12),
-    googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+    cookieSameSite: sessionCookieSameSite,
   },
 
   security: {
-    corsOrigins: toList(process.env.CORS_ORIGIN || process.env.CLIENT_URL, [
+    corsOrigins: toList(process.env.CORS_ORIGIN || clientUrl, [
       'http://localhost:5173',
     ]),
     rateLimitWindowMinutes: toInt(process.env.RATE_LIMIT_WINDOW_MINUTES, 15),
@@ -95,6 +104,7 @@ const env = {
 
   execution: {
     enabled: toBool(process.env.EXECUTION_ENABLED, false),
+    provider: executionProvider,
     runnerUrl: process.env.EXECUTION_SERVICE_URL || '',
     runnerToken: process.env.EXECUTION_SERVICE_TOKEN || '',
     timeoutMs: toInt(process.env.EXECUTION_TIMEOUT_MS, 5000),
@@ -115,7 +125,7 @@ const env = {
 
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || '',
-    model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
+    model: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
   },
 
   seed: {
@@ -151,7 +161,8 @@ const assertProductionSafety = () => {
   }
   if (env.seed.demoData) problems.push('SEED_DEMO_DATA must be false in production');
   if (env.execution.enabled && !env.execution.runnerUrl) problems.push('EXECUTION_SERVICE_URL must point to an isolated runner when code execution is enabled');
-  if (env.execution.enabled && !env.execution.runnerToken) problems.push('EXECUTION_SERVICE_TOKEN must be set when code execution is enabled');
+  if (env.execution.enabled && env.execution.provider === 'piston' && !/\/api\/v2\/execute\/?$/.test(env.execution.runnerUrl)) problems.push('EXECUTION_SERVICE_URL must use the Piston /api/v2/execute endpoint when EXECUTION_PROVIDER=piston');
+  if (env.execution.enabled && env.execution.provider === 'custom' && !env.execution.runnerToken) problems.push('EXECUTION_SERVICE_TOKEN must be set when a custom code execution service is enabled');
   if (env.execution.runnerUrl && !env.execution.runnerUrl.startsWith('https://')) problems.push('EXECUTION_SERVICE_URL must use HTTPS in production');
   if (env.compiler.runnerUrl && !env.compiler.runnerUrl.startsWith('https://')) problems.push('COMPILER_SERVICE_URL must use HTTPS in production');
   if (problems.length) {

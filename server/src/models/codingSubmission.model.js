@@ -56,6 +56,7 @@ const codingSubmissionSchema = new Schema(
 );
 
 codingSubmissionSchema.index({ user: 1, question: 1, accepted: 1 });
+codingSubmissionSchema.index({ user: 1, skill: 1, kind: 1, createdAt: -1 });
 codingSubmissionSchema.index({ user: 1, createdAt: -1 });
 codingSubmissionSchema.index({ user: 1, language: 1 });
 

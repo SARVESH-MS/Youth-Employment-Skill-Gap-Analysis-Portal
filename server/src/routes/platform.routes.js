@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const { body, validationResult } = require('express-validator');
@@ -17,10 +18,13 @@ const { getSkillGap } = require('../services/skillgap.service');
 const { notify, notifyAdmins } = require('../services/notification.service');
 const { recordActivity } = require('../services/activity.service');
 const { updateSkillProgress } = require('../services/progress.service');
+const readinessScoreService = require('../services/readinessScore.service');
+const { requestPiston, pistonLanguages } = require('../services/codeExecutionRunner.service');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { parsePagination, parseSort } = require('../utils/pagination');
 const { buildPaginationMeta } = require('../utils/apiResponse');
+const { tokenSearchFilter } = require('../utils/search');
 
 const router = express.Router();
 const resumeUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: env.resume.maxFileSizeMb * 1024 * 1024, files: 1 } });
@@ -34,7 +38,18 @@ const companyOnly = [authenticate, requireRole('company'), requireApprovedCompan
 const adminOnly = [authenticate, requireRole('admin')];
 const candidateSummary = (user) => user.toPublicProfile();
 const skillProjection = 'name slug shortDescription category difficulty executionType supportedLanguages about';
-const compilerRateLimit = rateLimit({ windowMs: 60_000, limit: 12, standardHeaders: true, legacyHeaders: false });
+const getRecommendedModules = async (domainId) => {
+  const filter = { isPublished: true };
+  if (domainId) filter.skill = { $in: await DomainSkill.find({ domain: domainId }).distinct('skill') };
+  return LearningModule.find(filter)
+    .select('skill title slug description level order estimatedMinutes')
+    .populate('skill', 'name slug')
+    .sort({ order: 1 })
+    .limit(8)
+    .lean();
+};
+const compilerRateLimit = rateLimit({ windowMs: 60_000, limit: 12, keyGenerator: (req) => String(req.user?._id || req.ip), standardHeaders: true, legacyHeaders: false });
+const challengeExecutionRateLimit = rateLimit({ windowMs: 60_000, limit: 8, keyGenerator: (req) => String(req.user?._id || req.ip), standardHeaders: true, legacyHeaders: false });
 
 async function completeCodingRound(round, student, submission, score) {
   const application = round.application;
@@ -71,13 +86,13 @@ router.get('/catalog/skills', asyncHandler(async (req, res) => {
   const filter = { isActive: true };
   if (req.query.category) filter.category = String(req.query.category);
   if (req.query.difficulty) filter.difficulty = String(req.query.difficulty);
-  if (req.query.q) filter.$text = { $search: String(req.query.q).slice(0, 100) };
+  if (req.query.q) Object.assign(filter, tokenSearchFilter(req.query.q, ['name', 'shortDescription', 'description', 'tags', 'category']));
   if (req.query.domain) {
     const links = await DomainSkill.find({ domain: req.query.domain }).select('skill');
     filter._id = { $in: links.map((link) => link.skill) };
   }
-  const skills = await Skill.find(filter, req.query.q ? { score: { $meta: 'textScore' } } : undefined)
-    .select(skillProjection).sort(req.query.q ? { score: { $meta: 'textScore' } } : { category: 1, order: 1, name: 1 }).limit(200);
+  const skills = await Skill.find(filter)
+    .select(skillProjection).sort({ category: 1, order: 1, name: 1 }).limit(200);
   res.json({ success: true, data: skills });
 }));
 router.get('/catalog/skills/:skillId', asyncHandler(async (req, res) => {
@@ -93,19 +108,25 @@ router.get('/catalog/skills/:skillId', asyncHandler(async (req, res) => {
 
 router.get('/student/dashboard', ...studentOnly, asyncHandler(async (req, res) => {
   const domainId = req.user.careerDomain?._id || req.user.careerDomain;
-  const [gap, userSkills, modules, latestActivity, applications, attempts, coding, snapshots] = await Promise.all([
+  const streakPromise = domainId ? Promise.resolve(null) : Streak.findOne({ user: req.user._id }).lean();
+  const [gap, userSkills, modules, latestActivity, applications, attempts, coding, snapshots, streak, learningDone, unread] = await Promise.all([
     domainId ? getSkillGap(req.user._id, domainId) : null,
     UserSkill.find({ user: req.user._id }).populate('skill', 'name slug category').sort({ updatedAt: -1 }).limit(12),
-    LearningModule.find({ isPublished: true, ...(domainId ? { skill: { $in: await DomainSkill.find({ domain: domainId }).distinct('skill') } } : {}) }).populate('skill', 'name slug').sort({ order: 1 }).limit(8),
+    getRecommendedModules(domainId),
     ActivityLog.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(30).select('action localDay createdAt skill'),
     Application.countDocuments({ student: req.user._id, status: 'offered' }),
-    TestAttempt.find({ user: req.user._id, status: 'submitted', mode: 'self' }).select('percentage'),
+    TestAttempt.aggregate([
+      { $match: { user: req.user._id, status: 'submitted', mode: 'self' } },
+      { $group: { _id: null, completed: { $sum: 1 }, averageScore: { $avg: '$percentage' } } },
+    ]),
     CodingSubmission.countDocuments({ user: req.user._id, kind: 'submit', executionStatus: 'ok', accepted: true }),
     ProgressSnapshot.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(8).select('careerReadiness createdAt'),
+    streakPromise,
+    LessonProgress.countDocuments({ user: req.user._id, status: 'completed' }),
+    Notification.countDocuments({ user: req.user._id, read: false }),
   ]);
-  const streak = await Streak.findOne({ user: req.user._id });
-  const learningDone = await LessonProgress.countDocuments({ user: req.user._id, status: 'completed' });
-  const unread = await Notification.countDocuments({ user: req.user._id, read: false });
+  const currentStreak = gap?.currentStreak ?? streak?.currentStreak ?? 0;
+  const longestStreak = gap?.longestStreak ?? streak?.longestStreak ?? 0;
   res.json({ success: true, data: {
     user: req.user.toPublicProfile({ includeContact: true }),
     gap,
@@ -114,17 +135,23 @@ router.get('/student/dashboard', ...studentOnly, asyncHandler(async (req, res) =
     activity: latestActivity,
     readinessHistory: snapshots.reverse(),
     stats: {
-      learningProgress: gap?.readinessInputs.learningProgress || 0,
+      learningProgress: gap?.learningMetrics.learningProgress || 0,
       lessonsCompleted: learningDone,
       codingProblemsSolved: coding,
-      testsCompleted: attempts.length,
-      averageAssessmentScore: attempts.length ? Math.round(attempts.reduce((sum, row) => sum + row.percentage, 0) / attempts.length) : 0,
-      currentStreak: streak?.currentStreak || 0,
-      longestStreak: streak?.longestStreak || 0,
+      testsCompleted: attempts[0]?.completed || 0,
+      averageAssessmentScore: Math.round(attempts[0]?.averageScore || 0),
+      currentStreak,
+      longestStreak,
       opportunitiesReceived: applications,
       unreadNotifications: unread,
     },
   } });
+}));
+
+router.get('/student/learning', ...studentOnly, asyncHandler(async (req, res) => {
+  const domainId = req.user.careerDomain?._id || req.user.careerDomain;
+  const modules = await getRecommendedModules(domainId);
+  res.json({ success: true, data: { modules } });
 }));
 
 router.get('/student/profile', ...studentOnly, asyncHandler(async (req, res) => {
@@ -208,7 +235,7 @@ router.put('/student/skills/:skillId', ...studentOnly, [body('status').isIn(['kn
   const status = req.body.status;
   const row = await UserSkill.findOneAndUpdate(
     { user: req.user._id, skill: skill._id },
-    { $set: { status, source: 'manual', ...(status === 'in-progress' ? { startedAt: new Date() } : {}) }, $setOnInsert: { progress: 0 } },
+    { $set: { status, readinessState: 'in-progress', source: 'manual', ...(status === 'in-progress' ? { startedAt: new Date() } : {}) }, $setOnInsert: { progress: 0 } },
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
   );
   await recordActivity(req.user, 'skill-updated', { skill: skill._id });
@@ -223,12 +250,19 @@ router.get('/student/roadmap', ...studentOnly, asyncHandler(async (req, res) => 
   const modules = await LearningModule.find({ skill: { $in: skillIds }, isPublished: true }).sort({ order: 1 });
   const firstModule = new Map();
   modules.forEach((module) => { if (!firstModule.has(String(module.skill))) firstModule.set(String(module.skill), module); });
-  res.json({ success: true, data: gap.skills.map((row) => ({ ...row, recommendedModule: firstModule.get(String(row.skill._id)) || null })) });
+  res.json({ success: true, data: {
+    skills: gap.skills.map((row) => ({ ...row, recommendedModule: firstModule.get(String(row.skill._id)) || null })),
+    careerReadiness: gap.careerReadiness,
+    skillGapPercentage: gap.skillGapPercentage,
+    skillCompletionPercentage: gap.skillCompletionPercentage,
+    readinessBreakdown: gap.readinessBreakdown,
+  } });
 }));
 
 router.get('/student/skills/:skillId/learning', ...studentOnly, asyncHandler(async (req, res) => {
   const skill = await Skill.findOne({ _id: req.params.skillId, isActive: true }).select(skillProjection);
   if (!skill) throw ApiError.notFound('Skill not found');
+  await readinessScoreService.recordSkillEngagement(req.user._id, skill._id);
   const [modules, progress, annotations] = await Promise.all([
     LearningModule.find({ skill: skill._id, isPublished: true }).sort({ order: 1 }),
     LessonProgress.find({ user: req.user._id, skill: skill._id }).select('subtopicId status timeSpentSec quizPassed quizScore'),
@@ -248,6 +282,7 @@ router.post('/student/learning/:moduleId/:subtopicId/engagement', ...studentOnly
     { $setOnInsert: { user: req.user._id, skill: module.skill, module: module._id, topicId: topic._id, subtopicId: subtopic._id }, $inc: { timeSpentSec: req.body.seconds }, $set: { status: 'in-progress', lastViewedAt: new Date() } },
     { new: true, upsert: true, runValidators: true }
   );
+  await readinessScoreService.recordSkillEngagement(req.user._id, module.skill);
   if (row.timeSpentSec >= 45 && row.status !== 'completed') {
     row.status = 'completed';
     row.completedAt = new Date();
@@ -273,6 +308,7 @@ router.post('/student/learning/:moduleId/:subtopicId/checkpoint', ...studentOnly
     { $setOnInsert: { user: req.user._id, skill: module.skill, module: module._id, topicId: topic._id, subtopicId: subtopic._id }, $set: { quizPassed: score >= 60, quizScore: score, ...(score >= 60 ? { status: 'completed', completedAt: new Date() } : {}) }, $inc: { quizAttempts: 1 } },
     { upsert: true, new: true, runValidators: true }
   );
+  await readinessScoreService.recordSkillEngagement(req.user._id, module.skill);
   if (score >= 60) {
     await updateSkillProgress(req.user._id, module.skill);
     await recordActivity(req.user, 'lesson-completed', { entityType: 'LessonProgress', entityId: row._id, skill: module.skill });
@@ -364,7 +400,7 @@ router.get('/student/coding/questions/:id/solution', ...studentOnly, asyncHandle
   if (!source) throw ApiError.notFound('No solution is available in the selected language');
   res.json({ success: true, data: { language, source, approach: question.approach, timeComplexity: question.timeComplexity, spaceComplexity: question.spaceComplexity } });
 }));
-router.post('/student/coding/questions/:id/execute', ...studentOnly, [body('language').isIn(['java', 'python', 'c', 'cpp', 'javascript', 'sql']), body('sourceCode').isString().isLength({ min: 1, max: 60000 }), body('kind').optional().isIn(['run', 'submit']), body('roundId').optional().isMongoId()], validate, asyncHandler(async (req, res) => {
+router.post('/student/coding/questions/:id/execute', ...studentOnly, challengeExecutionRateLimit, [body('language').isIn(['java', 'python', 'c', 'cpp', 'javascript', 'sql']), body('sourceCode').isString().isLength({ min: 1, max: 60000 }), body('kind').optional().isIn(['run', 'submit']), body('roundId').optional().isMongoId()], validate, asyncHandler(async (req, res) => {
   const question = await require('../models').CodingQuestion.findOne({ _id: req.params.id, isActive: true }).populate('skill', 'executionType');
   if (!question) throw ApiError.notFound('Coding question not found');
   if (question.skill.executionType === 'none') throw ApiError.badRequest('This skill does not provide executable practice');
@@ -381,15 +417,25 @@ router.post('/student/coding/questions/:id/execute', ...studentOnly, [body('lang
   if (!env.execution.enabled || !env.execution.runnerUrl) throw ApiError.unprocessable('The isolated code runner is not configured. Code is not executed by the YESGAP web server.', { code: 'RUNNER_UNAVAILABLE' });
   const kind = req.body.kind === 'submit' ? 'submit' : 'run';
   const cases = question.testCases.filter((item) => kind === 'submit' || !item.hidden);
+  if (!cases.length) throw ApiError.unprocessable('This coding question does not have runnable test cases yet.');
+  if (env.execution.provider === 'piston' && !pistonLanguages[req.body.language]) {
+    throw ApiError.unprocessable('SQL challenges need a dedicated SQL sandbox. The configured Piston runner supports JavaScript, Python, Java, C, and C++.');
+  }
+  if (cases.length > 10) throw ApiError.unprocessable('This challenge has more test cases than the runner limit of 10.');
   let runnerResult;
   try {
-    const response = await fetch(env.execution.runnerUrl, {
-      method: 'POST', headers: { 'content-type': 'application/json', ...(env.execution.runnerToken ? { authorization: `Bearer ${env.execution.runnerToken}` } : {}) },
-      body: JSON.stringify({ sourceCode: req.body.sourceCode, language: req.body.language, executionType: question.skill.executionType, testCases: cases.map((item) => ({ input: item.input, expectedOutput: item.expectedOutput })), limits: { timeoutMs: env.execution.timeoutMs, cpuSeconds: env.execution.cpuLimitSeconds, memoryMb: env.execution.memoryLimitMb, maxOutputChars: env.execution.maxOutputChars } }),
-      signal: AbortSignal.timeout(env.execution.timeoutMs + 2000),
-    });
-    runnerResult = await response.json();
-    if (!response.ok) throw new Error(`Isolated runner returned ${response.status}`);
+    const limits = { timeoutMs: env.execution.timeoutMs, cpuSeconds: env.execution.cpuLimitSeconds, memoryMb: env.execution.memoryLimitMb, maxOutputChars: env.execution.maxOutputChars };
+    if (env.execution.provider === 'piston') {
+      runnerResult = await requestPiston({ endpoint: env.execution.runnerUrl, token: env.execution.runnerToken, sourceCode: req.body.sourceCode, language: req.body.language, testCases: cases.map(({ input }) => ({ input })), limits });
+    } else {
+      const response = await fetch(env.execution.runnerUrl, {
+        method: 'POST', headers: { 'content-type': 'application/json', ...(env.execution.runnerToken ? { authorization: `Bearer ${env.execution.runnerToken}` } : {}) },
+        body: JSON.stringify({ sourceCode: req.body.sourceCode, language: req.body.language, executionType: question.skill.executionType, testCases: cases.map((item) => ({ input: item.input, expectedOutput: item.expectedOutput })), limits }),
+        signal: AbortSignal.timeout(env.execution.timeoutMs + 2000),
+      });
+      runnerResult = await response.json();
+      if (!response.ok) throw new Error(`Isolated runner returned ${response.status}`);
+    }
   } catch (error) {
     const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
     runnerResult = { status: timedOut ? 'timeout' : 'internal', stdout: '', stderr: timedOut ? 'Execution timed out.' : 'The isolated execution service is unavailable.', exitCode: -1, durationMs: env.execution.timeoutMs };
@@ -402,7 +448,7 @@ router.post('/student/coding/questions/:id/execute', ...studentOnly, [body('lang
     const expected = String(item.expectedOutput ?? '').trim();
     return { index, input: item.hidden ? '' : item.input, expectedOutput: item.hidden ? '' : item.expectedOutput, actualOutput: item.hidden ? '' : actual, passed: executionStatus === 'ok' && (typeof result.passed === 'boolean' ? result.passed : actual.trim() === expected), hidden: Boolean(item.hidden) };
   });
-  const submission = await CodingSubmission.create({ user: req.user._id, skill: question.skill._id, question: question._id, round: recruitmentRound?._id, language: req.body.language, source: req.body.sourceCode, kind, executionStatus, stdout: String(runnerResult.stdout || '').slice(0, env.execution.maxOutputChars), stderr: String(runnerResult.stderr || '').slice(0, env.execution.maxOutputChars), exitCode: Number.isInteger(runnerResult.exitCode) ? runnerResult.exitCode : 0, durationMs: Math.min(Number(runnerResult.durationMs) || 0, env.execution.timeoutMs), totalTests: cases.length, passedTests: outcomes.filter((item) => item.passed).length, outcomes, accepted: kind === 'submit' && executionStatus === 'ok' && outcomes.every((item) => item.passed) });
+  const submission = await CodingSubmission.create({ user: req.user._id, skill: question.skill._id, question: question._id, round: recruitmentRound?._id, language: req.body.language, source: req.body.sourceCode, kind, executionStatus, stdout: String(runnerResult.stdout || '').slice(0, env.execution.maxOutputChars), stderr: String(runnerResult.stderr || '').slice(0, env.execution.maxOutputChars), exitCode: Number.isInteger(runnerResult.exitCode) ? runnerResult.exitCode : 0, durationMs: Math.min(Number(runnerResult.durationMs) || 0, 60_000), totalTests: cases.length, passedTests: outcomes.filter((item) => item.passed).length, outcomes, accepted: kind === 'submit' && executionStatus === 'ok' && outcomes.every((item) => item.passed) });
   if (kind === 'submit') await recordActivity(req.user, 'coding-submitted', { skill: question.skill._id, entityType: 'CodingSubmission', entityId: submission._id, meta: { accepted: submission.accepted } });
   let roundOutcome;
   if (kind === 'submit' && recruitmentRound && executionStatus !== 'internal') roundOutcome = await completeCodingRound(recruitmentRound, req.user, submission, submission.totalTests ? Math.round(submission.passedTests / submission.totalTests * 100) : 0);
@@ -499,6 +545,7 @@ router.post('/student/assessments/attempts/:id/submit', ...studentOnly, asyncHan
   await attempt.save();
   await recordActivity(req.user, 'test-completed', { skill: attempt.skill, entityType: 'TestAttempt', entityId: attempt._id });
   await UserSkill.findOneAndUpdate({ user: req.user._id, skill: attempt.skill }, { $set: { status: 'in-progress', source: 'activity', lastActivityAt: new Date() } }, { upsert: true, setDefaultsOnInsert: true });
+  await readinessScoreService.recordAssessmentResult(req.user._id, attempt.skill, attempt.percentage);
   if (attempt.mode === 'recruitment' && attempt.round) {
     const round = await RecruitmentRound.findById(attempt.round).populate('application');
     if (round?.application) {
@@ -626,14 +673,40 @@ router.get('/company/dashboard', ...companyOnly, asyncHandler(async (req, res) =
 router.get('/company/candidates', ...companyOnly, asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const filter = { role: 'student', isActive: true };
+  let verifiedMatchUsers = new Set();
+  let matchedSkill = null;
   if (req.query.domainId) filter.careerDomain = req.query.domainId;
-  if (req.query.q) filter.$text = { $search: String(req.query.q).slice(0, 100) };
+  if (req.query.q) Object.assign(filter, tokenSearchFilter(req.query.q, ['fullName', 'headline']));
+  if (req.query.skillId) {
+    if (!mongoose.isValidObjectId(req.query.skillId)) throw ApiError.badRequest('Choose a valid skill');
+    const readinessSettings = await readinessScoreService.getSettings();
+    const [profileMatches, assessmentMatches, codingMatches] = await Promise.all([
+      UserSkill.distinct('user', {
+        skill: req.query.skillId,
+        $or: [
+          { status: { $in: ['known', 'completed'] } },
+          { readinessState: { $in: ['completed', 'verified'] } },
+        ],
+      }),
+      TestAttempt.distinct('user', {
+        skill: req.query.skillId,
+        mode: 'self',
+        status: 'submitted',
+        percentage: { $gte: readinessSettings.verificationPassPercentage },
+      }),
+      CodingSubmission.distinct('user', {
+        skill: req.query.skillId,
+        kind: 'submit',
+        executionStatus: 'ok',
+        accepted: true,
+      }),
+    ]);
+    filter._id = { $in: [...new Set([...profileMatches, ...assessmentMatches, ...codingMatches].map(String))] };
+    verifiedMatchUsers = new Set([...assessmentMatches, ...codingMatches].map(String));
+    matchedSkill = await Skill.findById(req.query.skillId).select('name slug');
+  }
   let candidates = await User.find(filter).select('fullName headline careerDomain education createdAt').populate('careerDomain', 'name slug').sort(parseSort(req.query.sort, { createdAt: -1 })).skip(skip).limit(limit);
   const total = await User.countDocuments(filter);
-  if (req.query.skillId) {
-    const knownIds = new Set((await UserSkill.find({ skill: req.query.skillId, status: { $in: ['known', 'completed'] }, user: { $in: candidates.map(({ _id }) => _id) } }).distinct('user')).map(String));
-    candidates = candidates.filter(({ _id }) => knownIds.has(String(_id)));
-  }
   const candidateIds = candidates.map(({ _id }) => _id);
   const [skills, attempts, lessons, applications] = await Promise.all([
     UserSkill.find({ user: { $in: candidateIds } }).populate('skill', 'name slug').lean(),
@@ -643,10 +716,15 @@ router.get('/company/candidates', ...companyOnly, asyncHandler(async (req, res) 
   ]);
   const byUser = (rows) => new Map(rows.map((row) => [String(row._id || row.user), row]));
   const skillMap = new Map();
-  skills.forEach((row) => { const key = String(row.user); if (!skillMap.has(key)) skillMap.set(key, []); skillMap.get(key).push({ skill: row.skill, status: row.status, progress: row.progress }); });
+  skills.forEach((row) => { const key = String(row.user); if (!skillMap.has(key)) skillMap.set(key, []); skillMap.get(key).push({ skill: row.skill, status: row.status, readinessState: row.readinessState, progress: row.progress }); });
   const testMap = byUser(attempts); const lessonMap = byUser(lessons); const appMap = new Map(applications.map((row) => [String(row.student), row]));
   const data = candidates.map((user) => {
-    const userSkills = skillMap.get(String(user._id)) || [];
+    const userSkills = [...(skillMap.get(String(user._id)) || [])];
+    if (matchedSkill && verifiedMatchUsers.has(String(user._id))) {
+      const matchedIndex = userSkills.findIndex(({ skill }) => String(skill?._id || skill) === String(matchedSkill._id));
+      if (matchedIndex >= 0) userSkills[matchedIndex] = { ...userSkills[matchedIndex], readinessState: 'verified' };
+      else userSkills.push({ skill: matchedSkill, status: 'missing', readinessState: 'verified', progress: 0 });
+    }
     const test = testMap.get(String(user._id));
     return {
       ...candidateSummary(user),
@@ -656,7 +734,7 @@ router.get('/company/candidates', ...companyOnly, asyncHandler(async (req, res) 
       assessmentsCompleted: test?.completed || 0,
       recruitmentStatus: appMap.get(String(user._id))?.status || null,
       indicators: [
-        ...(userSkills.filter(({ status }) => status === 'known' || status === 'completed').length >= 3 ? ['strong-skill-match'] : []),
+        ...(userSkills.filter(({ status, readinessState }) => status === 'known' || status === 'completed' || readinessState === 'verified').length >= 3 ? ['strong-skill-match'] : []),
         ...(lessonMap.get(String(user._id))?.completed >= 5 ? ['high-progress'] : []),
         ...(test?.averageScore >= 80 ? ['strong-assessment-performance'] : []),
       ],

@@ -82,6 +82,7 @@ const testAttemptSchema = new Schema(
 );
 
 testAttemptSchema.index({ user: 1, skill: 1, status: 1 });
+testAttemptSchema.index({ user: 1, skill: 1, mode: 1, status: 1, submittedAt: -1 });
 testAttemptSchema.index({ user: 1, createdAt: -1 });
 testAttemptSchema.index({ user: 1, skill: 1, difficulty: 1, setNumber: 1, status: 1 });
 

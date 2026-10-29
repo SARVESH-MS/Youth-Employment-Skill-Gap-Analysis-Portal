@@ -8,14 +8,16 @@ shared domain and skill catalog, learning content, progress, assessments,
 recruitment, complaints, and in-portal notifications. No external email service
 is part of the design.
 
-## Current workspace baseline
+## Current implementation baseline
 
-The workspace contains a substantial persistence scaffold: Mongoose models,
-repositories, shared constants, environment configuration, and GridFS setup.
-It does not yet contain an Express application/server, routes, controllers,
-services, seed implementation, README, or any React application source. The
-workspace also has no `.git` directory, so there is no commit history to use as
-a continuation marker.
+The workspace already contains a substantial React/Vite client and Express/
+Mongoose API. Auth, learning, assessment, recruitment, admin, readiness scoring,
+demo seed, curriculum references, and MongoDB GridFS resume flows are present.
+Local code execution is proxied to a self-hosted Piston service; the API does
+not evaluate learner code in-process. The main engineering work now is release
+hardening, automated browser coverage, production infrastructure configuration,
+and reviewed expansion of the starter curriculum. See
+[`PROJECT_STATUS.md`](PROJECT_STATUS.md) for the current deployment gaps.
 
 ## Target folder structure
 
@@ -100,7 +102,7 @@ historical record is useful.
    student/company/admin demo accounts, starter domain/skill/learning/test data,
    `.env.example`, setup/deployment notes and demo credentials in README.
 
-Each phase is implemented in dependency order. Learning and question content is
+The application implements these phases in dependency order. Learning and question content is
 stored in MongoDB and designed for expansion by admins. Official public sources
 are indexed by skill in `server/src/seed/curriculum-sources.js`; lesson text,
 examples and exercises are authored for YESGAP and presented inside the portal.

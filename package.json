@@ -13,8 +13,10 @@
     "dev:client": "npm --workspace client run dev",
     "seed": "npm --workspace server run seed",
     "seed:fresh": "npm --workspace server run seed:fresh",
+    "seed:catalog": "npm --workspace server run seed:catalog",
     "seed:references": "npm --workspace server run seed:references",
     "seed:curriculum": "npm --workspace server run seed:curriculum",
+    "test": "npm --workspace server run test",
     "build": "npm --workspace client run build",
     "start": "npm --workspace server run start"
   },
@@ -25,7 +27,7 @@
     "braces": "^3.0.3"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "license": "MIT"
 }

@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: yesgap
+    runtime: node
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    initialDeployHook: npm run seed:catalog
+    healthCheckPath: /api/health/ready
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_COOKIE_SAME_SITE
+        value: strict
+      - key: SEED_DEMO_DATA
+        value: "false"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CSRF_SECRET
+        generateValue: true
+      - key: INITIAL_ADMIN_EMAIL
+        sync: false
+      - key: INITIAL_ADMIN_USERNAME
+        sync: false
+      - key: INITIAL_ADMIN_PHONE
+        sync: false
+      - key: INITIAL_ADMIN_PASSWORD
+        sync: false
+      - key: INITIAL_ADMIN_FULL_NAME
+        sync: false

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Archive, BookOpenCheck, CheckCircle2, ClipboardCheck, Code2, Pencil, Plus, RotateCcw, Search } from 'lucide-react';
 import api, { dataOf, errorMessage } from '../api/client';
 import { Badge, EmptyState, ErrorNotice, Field, FormSelect, Loading, Modal, PageMotion, SectionHeading } from './Common';
+import { matchesSearch } from '../utils/search';
 
 const managerConfig = {
   practice: { endpoint: '/admin/practice-questions', title: 'Practice questions', singular: 'practice question', icon: BookOpenCheck, description: 'Author scenario and knowledge checks for any skill. These questions appear in the shared practice workspace.' },
@@ -48,7 +49,7 @@ export default function AdminQuestionManager({ kind }) {
   useEffect(() => { loadSkills(); }, [loadSkills]);
   useEffect(() => { loadRows(); }, [loadRows]);
 
-  const filtered = useMemo(() => rows.filter((row) => `${row.title || ''} ${row.prompt || ''} ${row.statement || ''} ${row.skill?.name || ''} ${row.topic || ''}`.toLowerCase().includes(query.toLowerCase())), [rows, query]);
+  const filtered = useMemo(() => rows.filter((row) => matchesSearch(query, row.title, row.prompt, row.statement, row.skill?.name, row.topic, row.tags)), [rows, query]);
   const startCreate = () => {
     setEditing(null);
     setDraftSkill(skills.find((skill) => skill.isActive)?._id || '');

@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { ArrowRight, LoaderCircle, Search, TriangleAlert } from 'lucide-react';
 
 export function PageMotion({ children, className = '' }) {
-  return <motion.div className={className} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, ease: 'easeOut' }}>{children}</motion.div>;
+  return <div className={className}>{children}</div>;
 }
 
 export function FullPageLoader() {
@@ -22,11 +22,11 @@ export function EmptyState({ icon: Icon = Search, title, description, action }) 
 }
 
 export function StatCard({ label, value, detail, icon: Icon, tone = 'mint', trend }) {
-  return <motion.article className={`stat-card stat-${tone}`} whileHover={{ y: -3 }} transition={{ duration: 0.18 }}>
+  return <article className={`stat-card stat-${tone}`}>
     <div className="stat-top"><span>{label}</span><div className="stat-icon">{Icon && <Icon size={18} />}</div></div>
     <div className="stat-value">{value ?? '—'}{trend && <span className="stat-trend">{trend}</span>}</div>
     {detail && <p>{detail}</p>}
-  </motion.article>;
+  </article>;
 }
 
 export function SectionHeading({ eyebrow, title, description, action }) {
@@ -35,7 +35,7 @@ export function SectionHeading({ eyebrow, title, description, action }) {
 
 export function ProgressBar({ value = 0, tone = 'mint', label }) {
   const safe = Math.max(0, Math.min(100, Number(value) || 0));
-  return <div className={`progress-track progress-${tone}`} role="progressbar" aria-label={label || 'Progress'} aria-valuemin="0" aria-valuemax="100" aria-valuenow={safe}><motion.span initial={{ width: 0 }} animate={{ width: `${safe}%` }} transition={{ duration: 0.7, ease: 'easeOut' }} /></div>;
+  return <div className={`progress-track progress-${tone}`} role="progressbar" aria-label={label || 'Progress'} aria-valuemin="0" aria-valuemax="100" aria-valuenow={safe}><span style={{ width: `${safe}%` }} /></div>;
 }
 
 export function Badge({ children, tone = 'neutral' }) { return <span className={`badge badge-${tone}`}>{children}</span>; }
@@ -48,5 +48,5 @@ export function FormInput(props) { return <input className="input" {...props} />
 export function FormSelect(props) { return <select className="input select-input" {...props} />; }
 
 export function Modal({ title, onClose, children }) {
-  return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><motion.section role="dialog" aria-modal="true" aria-label={title} className="modal-card" initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}><header><h2>{title}</h2><button className="icon-button" aria-label="Close dialog" onClick={onClose}>×</button></header>{children}</motion.section></div>;
+  return createPortal(<div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section role="dialog" aria-modal="true" aria-label={title} className="modal-card"><header><h2>{title}</h2><button className="icon-button" aria-label="Close dialog" onClick={onClose}>×</button></header>{children}</section></div>, document.body);
 }

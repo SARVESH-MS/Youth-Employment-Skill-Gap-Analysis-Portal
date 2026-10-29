@@ -19,6 +19,10 @@ const domainSkillSchema = new Schema(
     required: { type: Boolean, default: true },
     /** Relative importance, used for weighted career-readiness maths. */
     weight: { type: Number, default: 1, min: 0, max: 10 },
+    /** Career-readiness importance for this skill in this domain (1 = supporting, 5 = core). */
+    importanceWeight: { type: Number, default: 3, min: 1, max: 5 },
+    /** Human-readable domain role for the skill; does not alter legacy gap weights. */
+    importanceLevel: { type: String, enum: ['core', 'supporting'], default: 'supporting' },
     /** Recommended learning sequence inside the domain. */
     order: { type: Number, default: 0 },
     note: { type: String, trim: true, maxlength: 500 },
@@ -29,5 +33,6 @@ const domainSkillSchema = new Schema(
 // A skill can be attached to a domain only once.
 domainSkillSchema.index({ domain: 1, skill: 1 }, { unique: true });
 domainSkillSchema.index({ domain: 1, order: 1 });
+domainSkillSchema.index({ domain: 1, required: 1, order: 1 });
 
 module.exports = mongoose.model('DomainSkill', domainSkillSchema);

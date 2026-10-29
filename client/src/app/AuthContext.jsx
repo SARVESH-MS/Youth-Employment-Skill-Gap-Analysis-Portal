@@ -23,10 +23,11 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let alive = true;
-    ensureCsrf(true).catch(() => undefined).then(() => api.get('/auth/me').catch(async (error) => {
+    api.get('/auth/me').catch(async (error) => {
       if (error.response?.status !== 401) throw error;
+      await ensureCsrf();
       return api.post('/auth/refresh');
-    })).then((response) => { if (alive) { applySessionPolicy(response); setUser(dataOf(response)); } })
+    }).then((response) => { if (alive) { applySessionPolicy(response); setUser(dataOf(response)); } })
       .catch(() => { if (alive) setUser(null); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
@@ -41,13 +42,6 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (credentials) => {
     await ensureCsrf(true);
     const response = await api.post('/auth/login', credentials);
-    applySessionPolicy(response);
-    setUser(dataOf(response));
-    return dataOf(response);
-  }, [applySessionPolicy]);
-  const googleLogin = useCallback(async (credentials) => {
-    await ensureCsrf(true);
-    const response = await api.post('/auth/google', credentials);
     applySessionPolicy(response);
     setUser(dataOf(response));
     return dataOf(response);
@@ -80,7 +74,7 @@ export function AuthProvider({ children }) {
     };
   }, [user?._id, idleTimeoutMinutes, logout]);
 
-  const value = useMemo(() => ({ user, setUser, loading, login, googleLogin, register, logout, refreshUser, updateUser }), [user, loading, login, googleLogin, register, logout, refreshUser, updateUser]);
+  const value = useMemo(() => ({ user, setUser, loading, login, register, logout, refreshUser, updateUser }), [user, loading, login, register, logout, refreshUser, updateUser]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

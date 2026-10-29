@@ -43,7 +43,12 @@ class UserSkillRepository extends BaseRepository {
   /** Bulk upsert used when a student edits known skills or switches domain. */
   async setStatus(userId, skillId, status, extra = {}) {
     const update = {
-      $set: { status, ...extra, lastActivityAt: new Date() },
+      $set: {
+        status,
+        readinessState: status === SKILL_STATUS.COMPLETED ? 'completed' : status === SKILL_STATUS.MISSING ? 'missing' : 'in-progress',
+        ...extra,
+        lastActivityAt: new Date(),
+      },
     };
     if (status === SKILL_STATUS.IN_PROGRESS) update.$setOnInsert = { startedAt: new Date() };
     if (status === SKILL_STATUS.COMPLETED) update.$set.completedAt = new Date();
@@ -58,7 +63,7 @@ class UserSkillRepository extends BaseRepository {
     if (!skillIds.length) return { modifiedCount: 0 };
     return this.updateMany(
       { user: userId, skill: skillIds },
-      { $set: { status, source, lastActivityAt: new Date() } },
+      { $set: { status, readinessState: status === SKILL_STATUS.COMPLETED ? 'completed' : status === SKILL_STATUS.MISSING ? 'missing' : 'in-progress', source, lastActivityAt: new Date() } },
       { upsert: false }
     );
   }
@@ -71,6 +76,7 @@ class UserSkillRepository extends BaseRepository {
         update: {
           $set: {
             status: entry.status,
+            readinessState: entry.status === SKILL_STATUS.COMPLETED ? 'completed' : entry.status === SKILL_STATUS.MISSING ? 'missing' : 'in-progress',
             source: entry.source || 'manual',
             progress: entry.progress ?? 0,
             ...(entry.status === SKILL_STATUS.COMPLETED ? { completedAt: new Date() } : {}),

@@ -10,6 +10,7 @@ const {
 const catalog = require('./catalog');
 const { mergeSeededCurriculum } = require('./merge-seeded-curriculum');
 const { addDays, localDay } = require('../utils/timezone');
+const readinessScoreService = require('../services/readinessScore.service');
 
 const demoPassword = env.seed.demoPassword;
 const industries = ['Software products', 'Financial technology', 'Health technology', 'Retail platforms', 'Education technology', 'Cloud services', 'Cybersecurity', 'Data products', 'Mobility', 'Digital consulting'];
@@ -29,11 +30,19 @@ const mapBy = (rows) => new Map(rows.map((row) => [row.slug, row]));
 
 const syncCatalog = async () => {
   const domainRows = [];
-  for (const item of catalog.domains) domainRows.push(await Domain.findOneAndUpdate({ slug: item.slug }, { $set: { ...item, isActive: true } }, { upsert: true, new: true, setDefaultsOnInsert: true }));
+  for (const item of catalog.domains) {
+    let domain = await Domain.findOne({ slug: item.slug });
+    if (!domain) domain = await Domain.create({ ...item, isActive: true });
+    else if (!domain.createdBy && !domain.updatedBy) {
+      domain.set({ ...item, isActive: true });
+      await domain.save();
+    }
+    domainRows.push(domain);
+  }
   const skillRows = [];
   for (const item of catalog.skills) {
     const relatedTechnologies = item.relatedTechnologies || [];
-    const skill = await Skill.findOneAndUpdate({ slug: item.slug }, { $set: {
+    const seededFields = {
       name: item.name, slug: item.slug, category: item.category, difficulty: item.difficulty,
       executionType: item.executionType || 'none', supportedLanguages: item.supportedLanguages || [],
       shortDescription: item.shortDescription, description: item.description, tags: item.tags,
@@ -49,7 +58,13 @@ const syncCatalog = async () => {
         beginnerSuitability: ['beginner', 'intermediate'].includes(item.difficulty) ? 'beginner-friendly' : 'some-experience-helpful',
         jobRelevance: `Employers value practical ${item.name} skills demonstrated through clear work and problem solving.`,
       },
-    } }, { upsert: true, new: true, setDefaultsOnInsert: true });
+    };
+    let skill = await Skill.findOne({ slug: item.slug });
+    if (!skill) skill = await Skill.create(seededFields);
+    else if (!skill.createdBy && !skill.updatedBy) {
+      skill.set(seededFields);
+      await skill.save();
+    }
     skillRows.push(skill);
   }
   const domainMap = mapBy(domainRows);
@@ -59,18 +74,32 @@ const syncCatalog = async () => {
     'aws-fundamentals': ['cloud-fundamentals', 'linux'], 'machine-learning': ['python', 'data-analytics'],
   };
   for (const [slug, required] of Object.entries(prerequisites)) {
-    await Skill.updateOne({ slug }, { $set: { prerequisites: required.map((item) => skillMap.get(item)?._id).filter(Boolean) } });
+    await Skill.updateOne({ slug, createdBy: { $exists: false }, updatedBy: { $exists: false } }, { $set: { prerequisites: required.map((item) => skillMap.get(item)?._id).filter(Boolean) } });
   }
-  await DomainSkill.deleteMany({ domain: { $in: domainRows.map((row) => row._id) } });
   const joinRows = [];
   for (const [domainSlug, skillSlugs] of Object.entries(catalog.links)) {
     const domain = domainMap.get(domainSlug);
     skillSlugs.forEach((slug, order) => {
       const skill = skillMap.get(slug);
-      if (domain && skill) joinRows.push({ domain: domain._id, skill: skill._id, required: true, weight: order < 3 ? 1.5 : 1, order });
+      if (domain && skill) joinRows.push({
+        domain: domain._id,
+        skill: skill._id,
+        required: true,
+        // Keep the legacy skill-gap weight independent of readiness importance.
+        weight: order < 3 ? 1.5 : 1,
+        importanceWeight: order < 3 ? 5 : 3,
+        importanceLevel: order < 3 ? 'core' : 'supporting',
+        order,
+      });
     });
   }
-  if (joinRows.length) await DomainSkill.insertMany(joinRows);
+  if (joinRows.length) await DomainSkill.bulkWrite(joinRows.map((row) => ({
+    updateOne: {
+      filter: { domain: row.domain, skill: row.skill },
+      update: { $setOnInsert: row },
+      upsert: true,
+    },
+  })), { ordered: false });
 
   const moduleRows = [];
   for (const skill of skillRows) {
@@ -147,11 +176,11 @@ const syncCatalog = async () => {
 };
 
 const upsertUser = async ({ role, username, email, phone, fullName, password = demoPassword, ...fields }) => {
-  let user = await User.findOne({ role, username });
-  const isNew = !user;
-  if (!user) user = new User({ role, username });
+  const existing = await User.findOne({ role, username });
+  if (existing) return existing;
+  const user = new User({ role, username });
   Object.assign(user, { email, phone, fullName, ...fields, isActive: true });
-  if (isNew) await user.setPassword(password);
+  await user.setPassword(password);
   await user.save();
   return user;
 };
@@ -162,8 +191,14 @@ const demoStudents = async ({ domainRows, skillMap }) => {
     const domain = domainRows[(number - 1) % domainRows.length];
     const domainSkillIds = await DomainSkill.find({ domain: domain._id }).sort({ order: 1 }).distinct('skill');
     const name = demoFullName(number - 1);
+    const username = `demo-student-${pad(number)}`;
+    const existingStudent = await User.findOne({ role: 'student', username });
+    if (existingStudent) {
+      made.push(existingStudent);
+      continue;
+    }
     const student = await upsertUser({
-      role: 'student', username: `demo-student-${pad(number)}`,
+      role: 'student', username,
       email: `student${pad(number)}@demo.yesgap.local`, phone: `919800${pad(number, 6)}`,
       fullName: name, headline: `${domain.name} learner focused on practical product work.`,
       careerDomain: domain._id, theme: ['dark', 'light', 'midnight', 'slate'][number % 4], timezone: 'Asia/Kolkata',
@@ -174,16 +209,12 @@ const demoStudents = async ({ domainRows, skillMap }) => {
       },
       spokenLanguages: [{ language: 'English', proficiency: 'professional' }, { language: ['Hindi', 'Tamil', 'Marathi', 'Bengali', 'Telugu'][number % 5], proficiency: 'conversational' }],
     });
-    await UserSkill.deleteMany({ user: student._id });
     const records = domainSkillIds.map((skillId, index) => {
       const status = index < 2 + number % 3 ? (index === number % Math.max(1, domainSkillIds.length) && number % 4 === 0 ? 'completed' : 'known') : index < 4 + number % 3 ? 'in-progress' : 'missing';
-      return { user: student._id, skill: skillId, status, source: 'signup', progress: status === 'completed' ? 100 : status === 'in-progress' ? 15 + number % 70 : 0, ...(status === 'in-progress' ? { startedAt: new Date() } : {}), ...(status === 'completed' ? { completedAt: new Date() } : {}) };
+      const readinessState = status === 'completed' ? 'completed' : status === 'missing' ? 'missing' : 'in-progress';
+      return { user: student._id, skill: skillId, status, readinessState, source: 'signup', progress: status === 'completed' ? 100 : status === 'in-progress' ? 15 + number % 70 : 0, ...(status === 'in-progress' ? { startedAt: new Date() } : {}), ...(status === 'completed' ? { completedAt: new Date() } : {}) };
     });
     if (records.length) await UserSkill.insertMany(records);
-    await LessonProgress.deleteMany({ user: student._id });
-    await TestAttempt.deleteMany({ user: student._id });
-    await ActivityLog.deleteMany({ user: student._id });
-    await ProgressSnapshot.deleteMany({ user: student._id });
     const firstSkill = domainSkillIds.length ? await Skill.findById(domainSkillIds[0]) : null;
     const module = firstSkill ? await LearningModule.findOne({ skill: firstSkill._id, isPublished: true }) : null;
     const topic = module?.topics[0]; const subtopic = topic?.subtopics[0];
@@ -202,7 +233,8 @@ const demoStudents = async ({ domainRows, skillMap }) => {
     await Streak.findOneAndUpdate({ user: student._id }, { $set: { timezone: student.timezone, currentStreak: streak, longestStreak: Math.max(streak, 5 + number % 20), totalActiveDays: streak + 4, lastActivityDay: today, activityDates: days, dailyActivity: days.map((day, index) => ({ day, learn: index % 2 ? 1 : 2, practice: index % 3 ? 1 : 0, test: index % 4 === 0 ? 1 : 0 })) } }, { upsert: true, new: true, setDefaultsOnInsert: true });
     await ActivityLog.insertMany(days.slice(-5).map((day, index) => ({ user: student._id, role: 'student', action: index % 2 ? 'practice-submitted' : 'lesson-completed', localDay: day, createdAt: new Date(`${day}T12:00:00+05:30`), skill: domainSkillIds[index % domainSkillIds.length] })));
     const known = records.filter((row) => row.status === 'known' || row.status === 'completed').length;
-    await ProgressSnapshot.create({ user: student._id, domain: domain._id, careerReadiness: Math.round(20 + known / Math.max(1, records.length) * 55), skillGapPercentage: Math.round((records.length - known) / Math.max(1, records.length) * 100), skillCompletionPercentage: Math.round(known / Math.max(1, records.length) * 100), learningProgress: 25 + number % 70, practicePerformance: 45 + number % 50, assessmentPerformance: 50 + number % 45, consistency: 25 + number % 70, currentStreak: streak, knownCount: known, inProgressCount: records.filter((row) => row.status === 'in-progress').length, completedCount: records.filter((row) => row.status === 'completed').length, missingCount: records.filter((row) => row.status === 'missing').length, reason: 'Demo baseline created from sample learning and assessment activity.' });
+    const readiness = await readinessScoreService.calculate(student._id, domain._id);
+    await ProgressSnapshot.create({ user: student._id, domain: domain._id, careerReadiness: readiness.careerReadiness, skillGapPercentage: Math.round((records.length - known) / Math.max(1, records.length) * 100), skillCompletionPercentage: Math.round(known / Math.max(1, records.length) * 100), learningProgress: 25 + number % 70, practicePerformance: 45 + number % 50, assessmentPerformance: 50 + number % 45, consistency: 25 + number % 70, currentStreak: streak, knownCount: known, inProgressCount: records.filter((row) => row.status === 'in-progress').length, completedCount: records.filter((row) => row.status === 'completed').length, missingCount: records.filter((row) => row.status === 'missing').length, reason: 'Demo baseline career readiness calculated from weighted skill confidence, freshness, and market demand.' });
     made.push(student);
   }
   return made;
@@ -273,18 +305,24 @@ const cleanDemoData = async () => {
 };
 
 const run = async () => {
-  if (env.isProduction || !env.seed.demoData) throw new Error('Demo seeding is disabled. Use a development environment with SEED_DEMO_DATA=true.');
+  const catalogOnly = process.argv.includes('--catalog-only');
+  if (!catalogOnly && (env.isProduction || !env.seed.demoData)) throw new Error('Demo seeding is disabled. Use a development environment with SEED_DEMO_DATA=true.');
   await connectDB();
+  if (catalogOnly) {
+    const data = await syncCatalog();
+    console.log(`YESGAP catalog initialized: ${data.domainRows.length} domains, ${data.skillRows.length} skills, ${data.moduleRows.length} learning modules.`);
+    return;
+  }
   if (process.argv.includes('--fresh')) await cleanDemoData();
   const data = await syncCatalog();
   const admins = await seedAdmins();
   const students = await demoStudents(data);
   const companies = await demoCompanies(data);
-  // Ensure the setup is immediately inspectable in the terminal without ever
-  // printing a production secret or sending credentials outside the console.
+  // Keep repeat seeds safe for existing demo users: their profiles, learning
+  // history, assessments, and snapshots are left untouched. Use seed:fresh
+  // only when intentionally rebuilding demo accounts.
   console.log(`YESGAP development seed complete: ${data.domainRows.length} domains, ${data.skillRows.length} skills, ${data.moduleRows.length} modules, ${students.length} students, ${companies.length} companies, ${admins.length} admins.`);
-  console.log(`Demo password for generated students, companies and secondary admins: ${demoPassword}`);
-  console.log(`Super admin username: ${env.initialAdmin.username}`);
+  console.log('Demo sign-in details are documented in DEMO LOGIN CREDENTIALS.md; seed output never includes passwords.');
 };
 
 run().catch((error) => {

@@ -93,6 +93,7 @@ const learningModuleSchema = new Schema(
 );
 
 learningModuleSchema.index({ skill: 1, order: 1 });
+learningModuleSchema.index({ skill: 1, isPublished: 1, order: 1 });
 learningModuleSchema.index({ skill: 1, slug: 1 }, { unique: true });
 
 /** Derived counts used by the table of contents / progress bars. */
