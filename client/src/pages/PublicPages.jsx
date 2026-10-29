@@ -100,7 +100,7 @@ export function LandingPage() {
           <path className="yg-gateway-arch" d="M852 535V424a83 83 0 0 1 166 0v111" />
           <g className="yg-module-stack">
             {[[770,520],[830,520],[890,520],[950,520],[1010,520],[1070,520],[770,475],[830,475],[1010,475],[1070,475],[770,430],[830,430],[1010,430],[1070,430],[790,385],[850,385],[990,385],[1050,385],[820,340],[880,340],[940,340],[1000,340],[850,295],[910,295],[970,295],[880,250],[940,250]].map(([x, y], index) => (
-              <g key={index} className={'yg-portal-block yg-tile-tone-' + (index % 4)} transform={'translate(' + x + ' ' + y + ')'} style={{ animationDelay: (index * 0.075) + 's' }}>
+              <g key={index} className={'yg-portal-block yg-tile-tone-' + (index % 4)} transform={'translate(' + x + ' ' + y + ')'} style={{ '--cube-delay': (index * 0.055) + 's' }}>
                 <path className="yg-tile-top" d="M0 0 29-17 58 0 29 17Z" />
                 <path className="yg-tile-left" d="M0 0 29 17V47L0 30Z" />
                 <path className="yg-tile-right" d="M29 17 58 0V30L29 47Z" />
