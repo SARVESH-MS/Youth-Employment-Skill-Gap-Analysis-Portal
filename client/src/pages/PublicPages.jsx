@@ -61,13 +61,13 @@ export function LandingPage() {
         <div className="yg-world-haze" />
         <svg className="yg-landscape-svg" viewBox="0 0 1440 860" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <defs>
-            <linearGradient id="ygSky" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#182829" /><stop offset=".54" stopColor="#30403c" /><stop offset="1" stopColor="#172421" /></linearGradient>
-            <linearGradient id="ygFarRidge" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#86918a" stopOpacity=".37" /><stop offset="1" stopColor="#303f3b" stopOpacity=".12" /></linearGradient>
-            <linearGradient id="ygGround" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#52645a" stopOpacity=".6" /><stop offset="1" stopColor="#111d1b" /></linearGradient>
+            <linearGradient id="ygSky" x1="0" y1="0" x2="0" y2="1"><stop stopColor="var(--scene-sky-start)" /><stop offset=".54" stopColor="var(--scene-sky-mid)" /><stop offset="1" stopColor="var(--scene-sky-end)" /></linearGradient>
+            <linearGradient id="ygFarRidge" x1="0" y1="0" x2="1" y2="1"><stop stopColor="var(--scene-ridge-high)" stopOpacity=".37" /><stop offset="1" stopColor="var(--scene-ridge-low)" stopOpacity=".12" /></linearGradient>
+            <linearGradient id="ygGround" x1="0" y1="0" x2="0" y2="1"><stop stopColor="var(--scene-ground-high)" stopOpacity=".6" /><stop offset="1" stopColor="var(--scene-ground-low)" /></linearGradient>
             <linearGradient id="ygTileTop" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#c8d4c9" /><stop offset="1" stopColor="#74877b" /></linearGradient>
             <linearGradient id="ygTileLeft" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#64776d" /><stop offset="1" stopColor="#334640" /></linearGradient>
             <linearGradient id="ygTileRight" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#445950" /><stop offset="1" stopColor="#1f302c" /></linearGradient>
-            <radialGradient id="ygPortalLight"><stop stopColor="#edffdd" stopOpacity=".98" /><stop offset=".23" stopColor="#9be6b5" stopOpacity=".65" /><stop offset="1" stopColor="#63d4b2" stopOpacity="0" /></radialGradient>
+            <radialGradient id="ygPortalLight"><stop stopColor="var(--scene-portal-core)" stopOpacity=".98" /><stop offset=".23" stopColor="var(--scene-glow)" stopOpacity=".65" /><stop offset="1" stopColor="var(--scene-glow)" stopOpacity="0" /></radialGradient>
             <filter id="ygPortalBlur"><feGaussianBlur stdDeviation="18" /></filter>
             <filter id="ygSoftShadow"><feGaussianBlur stdDeviation="9" /></filter>
           </defs>
