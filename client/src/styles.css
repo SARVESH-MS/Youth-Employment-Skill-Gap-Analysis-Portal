@@ -1503,7 +1503,6 @@ html.landing-page-active body::-webkit-scrollbar {
 @keyframes yg-gateway-pulse { 0%, 100% { opacity: .24; stroke-width: 38; } 50% { opacity: .47; stroke-width: 55; } }
 @keyframes yg-beam-pulse { 0%, 100% { opacity: .42; } 50% { opacity: .9; } }
 @keyframes yg-module-hover { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
-@keyframes yg-cube-assemble { 0% { opacity: 0; translate: 0 26px; } 68% { opacity: 1; translate: 0 -3px; } 100% { opacity: 1; translate: 0 0; } }
 @keyframes yg-shards-drift { 0%, 100% { translate: 0 0; rotate: 0deg; } 50% { translate: 0 -10px; rotate: 1deg; } }
 @keyframes yg-label-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
 @keyframes yg-scroll-bob { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
@@ -1789,17 +1788,13 @@ html.landing-page-active body::-webkit-scrollbar {
 .skill-chart-center { z-index: 1; }
 
 /* The landing scene keeps its motion while avoiding dozens of animated SVG filters. */
-.yg-portal-block { filter: none; }
-.yg-module-stack > .yg-portal-block { animation: yg-cube-assemble .72s cubic-bezier(.16, .85, .28, 1) var(--cube-delay, 0s) backwards; }
-.yg-module-stack > .yg-portal-block:nth-child(4n + 1) { animation: yg-cube-assemble .72s cubic-bezier(.16, .85, .28, 1) var(--cube-delay, 0s) backwards, yg-module-hover 7s ease-in-out calc(1.08s + var(--cube-delay, 0s)) infinite; }
-@media (hover: hover) and (pointer: fine) {
-  .yg-home .hero-wrap:hover .yg-module-stack > .yg-portal-block:nth-child(5n + 2) { translate: 0 -5px; filter: drop-shadow(0 0 7px rgba(166, 236, 185, .42)); transition: translate .35s ease, filter .35s ease; }
-}
+.yg-portal-block { filter: none; animation: none; }
+.yg-module-stack > .yg-portal-block:nth-child(4n + 1) { animation: yg-module-hover 7s ease-in-out infinite; }
 @media (max-width: 680px) {
   .yg-world-haze, .yg-stage-stars circle, .yg-far-land, .yg-front-land, .yg-terrain-contours, .yg-perspective-grid, .yg-trail-points circle, .yg-floating-shards, .yg-scene-label, .yg-home .yg-hero-scroll svg, .yg-gateway-beam, .yg-career-trail-glow { animation: none !important; }
   .yg-gateway-beam, .yg-career-trail-glow, .yg-gateway-aura { filter: none !important; }
-  .yg-portal-block { filter: none !important; }
-  .yg-module-stack > .yg-portal-block:nth-child(7n + 1) { animation: yg-cube-assemble .58s cubic-bezier(.16, .85, .28, 1) var(--cube-delay, 0s) backwards, yg-module-hover 9s ease-in-out calc(1s + var(--cube-delay, 0s)) infinite !important; }
+  .yg-portal-block { filter: none !important; animation: none !important; }
+  .yg-module-stack > .yg-portal-block:nth-child(7n + 1) { animation: yg-module-hover 9s ease-in-out infinite !important; }
   .yg-career-trail { animation-duration: 24s; }
 }
 
