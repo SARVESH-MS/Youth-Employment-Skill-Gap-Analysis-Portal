@@ -2396,9 +2396,9 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 .assistant-launcher { touch-action: none; user-select: none; cursor: grab; }
 .assistant-launcher-dragging { cursor: grabbing; animation: none !important; transform: none !important; transition: none !important; }
 .assistant-launcher:not(.assistant-launcher-open) {
-  min-height: 52px;
-  gap: 10px;
-  padding: 7px 16px 7px 8px;
+  min-height: 44px;
+  gap: 8px;
+  padding: 5px 12px 5px 6px;
   border: 1px solid color-mix(in srgb, var(--accent), var(--line) 58%);
   border-radius: 999px;
   color: var(--text);
@@ -2408,13 +2408,13 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
   animation: none;
   transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
 }
-.assistant-launcher-mark { width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--accent), transparent 78%); border-radius: 50%; color: var(--accent-strong); background: var(--accent-soft); }
-.assistant-launcher-label { color: var(--text-secondary); font-size: 12px; font-weight: 650; letter-spacing: -.01em; }
+.assistant-launcher-mark { width: 32px; height: 32px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--accent), transparent 78%); border-radius: 50%; color: var(--accent-strong); background: var(--accent-soft); }
+.assistant-launcher-label { color: var(--text-secondary); font-size: 11px; font-weight: 650; letter-spacing: -.01em; }
 .assistant-launcher-label strong { color: var(--text); font-weight: 800; }
 .assistant-launcher:not(.assistant-launcher-open):hover { transform: translateY(-2px); border-color: var(--accent); background: var(--surface); box-shadow: 0 14px 34px rgba(8, 18, 22, .28), 0 0 0 3px color-mix(in srgb, var(--accent-soft), transparent 35%); }
 .assistant-launcher-open { border: 1px solid var(--line); color: var(--accent-strong); background: var(--surface); box-shadow: 0 8px 24px rgba(8, 18, 22, .2); }
 .assistant-launcher-open:hover { color: var(--text); background: var(--surface-hover); }
 @media (max-width: 620px) {
-  .assistant-launcher:not(.assistant-launcher-open) { min-height: 48px; gap: 8px; padding: 6px 13px 6px 7px; }
-  .assistant-launcher-mark { width: 34px; height: 34px; }
+  .assistant-launcher:not(.assistant-launcher-open) { min-height: 42px; gap: 7px; padding: 5px 10px 5px 5px; }
+  .assistant-launcher-mark { width: 30px; height: 30px; }
 }
