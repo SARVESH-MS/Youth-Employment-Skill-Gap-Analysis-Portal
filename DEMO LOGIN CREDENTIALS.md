@@ -1,6 +1,6 @@
 ﻿# YESGAP Demo Login Credentials
 
-These are the default local development demo accounts. Do not use the shared demo passwords in production. Seed counts and credentials may be overridden through environment variables. Passwords are hashed in MongoDB and the seed only sets them when an account is first created; it will not reset a password you changed later. A normal `npm run seed` preserves existing learner profiles and learning history. Use `npm run seed:fresh` only when you intentionally want to rebuild the demo accounts and their data.
+These are shared development demo accounts stored in the MongoDB Atlas database configured by `MONGODB_URI`. Do not use the shared demo passwords in production. Seed counts and credentials may be overridden through environment variables. Passwords are hashed in MongoDB and the seed only sets them when an account is first created; it will not reset a password you changed later. A normal `npm run seed` preserves existing learner profiles and learning history. Use `npm run seed:fresh` only when you intentionally want to rebuild demo accounts and their data.
 
 | Role | Username | Email | Password | Full name |
 | --- | --- | --- | --- | --- |
@@ -169,11 +169,11 @@ These are the default local development demo accounts. Do not use the shared dem
 | Approved company | `demo-company-099` | `company099@demo.yesgap.local` | `Demo@12345` | Meera Thomas |
 | Approved company | `demo-company-100` | `company100@demo.yesgap.local` | `Demo@12345` | Meera Verma |
 
-The super-administrator username, email, password, and full name use the local defaults shown above; `INITIAL_ADMIN_*` variables can override them. The demo password for generated administrators, students, and companies can be changed with `SEED_DEMO_PASSWORD`. A password or account value changed in `server/.env` can make this list differ from the local database.
+The super-administrator row above is the default for a fresh development database only. The existing Atlas administrator was preserved during migration, so its current password can differ from the table. `INITIAL_ADMIN_*` variables are used only when YESGAP must create the first administrator. The demo password for generated administrators, students, and companies can be changed with `SEED_DEMO_PASSWORD`; account changes in Atlas can make this list differ from the database.
 
 ## Run YESGAP (Windows PowerShell)
 
-Prerequisites: Node.js 22 or newer, npm, and MongoDB 6 or newer (local MongoDB or MongoDB Atlas). Run these commands from the project root. MongoDB must be running before seeding or starting the API.
+Prerequisites: Node.js 22 or newer, npm, and a MongoDB Atlas cluster. Set its driver URI in the ignored `server/.env` file before seeding or starting the API. Local development and deployment use this same Atlas database when configured with the same `MONGODB_URI`.
 
 ```powershell
 # Create the local environment file only if it does not already exist.
@@ -184,7 +184,7 @@ npm run seed
 npm run dev
 ```
 
-Open `http://localhost:5173`. The API is at `http://localhost:5000/api`; `/api/health/ready` checks its MongoDB connection and `/api/health/live` checks that the API process is responding. Keep the terminal open while using the app. If your local MongoDB Windows service is stopped, start PowerShell as Administrator and run `Start-Service MongoDB`. If using MongoDB Atlas, set `MONGODB_URI` in `server/.env` to your Atlas connection string instead. Restart the app after changing `server/.env`.
+Open `http://localhost:5173`. The API is at `http://localhost:5000/api`; `/api/health/ready` checks the Atlas connection and `/api/health/live` checks that the API process is responding. Keep the terminal open while using the app. Restart the app after changing `server/.env`.
 
 ## Optional: enable the compiler and code challenges
 

@@ -5,7 +5,7 @@ YESGAP is a MERN platform for students, hiring companies, and administrators. It
 ## Requirements
 
 - Node.js 22 or newer and npm (Node.js 24 LTS is pinned in `.nvmrc`)
-- MongoDB 6 or newer, local or Atlas
+- A MongoDB Atlas cluster and database user
 - An isolated execution service only if code running is enabled (optional)
 
 ## Local development
@@ -15,18 +15,20 @@ From the repository root in PowerShell:
 ```powershell
 if (!(Test-Path .\server\.env)) { Copy-Item .\.env.example .\server\.env }
 npm ci
-# Edit server/.env if MongoDB is not running locally or to change development credentials.
+# Set MONGODB_URI and development credentials in the ignored server/.env file.
 npm run seed
 npm run dev
 ```
 
 The Vite client is available at `http://localhost:5173`; the API is at `http://localhost:5000/api`. `/api/health/ready` checks API and MongoDB readiness; `/api/health/live` is a process liveness probe. `npm run dev` starts both processes. To run them separately, use `npm run dev:server` and `npm run dev:client` in separate terminals.
 
-The default database is `mongodb://127.0.0.1:27017/youth_employment_sgap`. MongoDB must be running before the server or seed command starts. The development seed is safe to rerun: it preserves existing demo student profiles and learning history. `npm run seed:fresh` is the explicit reset command; it deletes demo student, company, and secondary-admin records before recreating them, while keeping the super-admin account and unrelated database records.
+MongoDB Atlas is the single source of truth for local development and deployment. All application models and services use the central `MONGODB_URI` setting; there are no per-feature database connections. Set it in `server/.env`; YESGAP refuses to start without an Atlas `mongodb+srv://` URI and does not fall back to a local database. Keep the URI private and out of Git. `npm run seed` writes to the configured Atlas database and preserves existing demo student profiles and learning history. `npm run seed:fresh` deletes demo student, company, and secondary-admin records, so do not use it on data you want to preserve.
+
+To move an existing local database to Atlas once, set the Atlas URI in `server/.env` and run `npm run db:migrate:atlas`. The command leaves the local source unchanged, verifies document counts, maps references to an already existing matching admin account while preserving its Atlas password, and stops if it finds unexpected Atlas records. `LOCAL_MONGODB_URI` can select a non-default local source URI.
 
 ## Development demo accounts
 
-These shared credentials are only for a local development database. Change them before sharing a development environment and never use them in production.
+These are shared demo credentials for development data in the configured Atlas database. Never use them for production accounts. `npm run seed` writes demo users to the same Atlas database used by local development and deployment.
 
 | Account | Username | Password |
 | --- | --- | --- |
@@ -85,8 +87,8 @@ Build the frontend with `npm run build`; the deployable static files are written
 The repository includes a Render Blueprint at `render.yaml`. It builds the React client and serves it from the Express service, so the website and API share one HTTPS origin. This keeps authentication cookies first-party and supports direct links to client-side routes.
 
 1. Push the repository to GitHub. Do not commit `server/.env` or paste its contents into a public issue.
-2. Create a MongoDB Atlas cluster in Singapore and a database user. After the Render service exists, open its **Connect → Outbound** panel and add the listed CIDR ranges to Atlas **Network Access**. Use the Atlas **Connect → Drivers** connection string for `MONGODB_URI`; URL-encode any reserved characters in its password. Render's outbound ranges are shared by services in the same region, so copy the ranges shown for this service rather than opening Atlas to every IP address. See Render's [Atlas guide](https://render.com/docs/connect-to-mongodb-atlas) and [outbound IP guide](https://render.com/docs/outbound-ip-addresses), plus MongoDB's [connection guide](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/).
-3. In Render, create a new Blueprint and select this repository. Render reads `render.yaml`; provide the Atlas URI and the five `INITIAL_ADMIN_*` values when prompted. Render generates the JWT and CSRF secrets. The blueprint deploys in Singapore, close to the initial India-focused audience.
+2. Use the existing MongoDB Atlas cluster and database user for this project; do not create a second cluster. After the Render service exists, open its **Connect → Outbound** panel and add the listed CIDR ranges to Atlas **Network Access**. Use that cluster's Atlas **Connect → Drivers** connection string for `MONGODB_URI`; URL-encode any reserved characters in its password. Render's outbound ranges are shared by services in the same region, so copy the ranges shown for this service rather than opening Atlas to every IP address. See Render's [Atlas guide](https://render.com/docs/connect-to-mongodb-atlas) and [outbound IP guide](https://render.com/docs/outbound-ip-addresses), plus MongoDB's [connection guide](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/).
+3. In Render, create a new Blueprint and select this repository. Render reads `render.yaml`; provide the same Atlas URI used by local development and the five `INITIAL_ADMIN_*` values when prompted. Render generates the JWT and CSRF secrets. The web service deploys in Singapore.
 4. Wait for the build and deployment, then open `https://<your-service>.onrender.com/api/health/ready`. A healthy response reports MongoDB as connected. Sign in with the initial administrator account and immediately change its password.
 
 Use a unique admin email and username, a reachable phone number, and a unique password of at least 14 characters. Demo accounts are disabled in production. For a custom domain, set both `CLIENT_URL` and `CORS_ORIGIN` to that site's HTTPS origin in the Render service environment. Render's service URL is detected automatically when those variables are unset. The compiler and code execution remain disabled until a separate HTTPS isolated runner is configured. The Gemini assistant is optional; configure `GEMINI_API_KEY` in Render if you want to enable it. YESGAP sign-in uses email, phone, or username with a password.

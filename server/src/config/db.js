@@ -16,6 +16,12 @@ let isConnected = false;
 
 const connectDB = async () => {
   if (isConnected && mongoose.connection.readyState === 1) return mongoose.connection;
+  if (!env.db.uri) {
+    throw new Error('MONGODB_URI is required. Set the Atlas connection string in server/.env or the deployment environment.');
+  }
+  if (!env.db.uri.startsWith('mongodb+srv://')) {
+    throw new Error('YESGAP is configured to use MongoDB Atlas. MONGODB_URI must be an Atlas mongodb+srv:// connection string.');
+  }
 
   mongoose.connection.on('connected', () => {
     isConnected = true;

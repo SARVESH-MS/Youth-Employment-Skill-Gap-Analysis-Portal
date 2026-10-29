@@ -16,6 +16,7 @@
     "seed:catalog": "npm --workspace server run seed:catalog",
     "seed:references": "npm --workspace server run seed:references",
     "seed:curriculum": "npm --workspace server run seed:curriculum",
+    "db:migrate:atlas": "npm --workspace server run db:migrate:atlas",
     "test": "npm --workspace server run test",
     "build": "npm --workspace client run build",
     "start": "npm --workspace server run start"

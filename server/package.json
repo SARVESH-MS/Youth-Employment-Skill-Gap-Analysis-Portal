@@ -13,6 +13,7 @@
     "seed:catalog": "node src/seed/index.js --catalog-only",
     "seed:references": "node src/seed/sync-curriculum-references.js",
     "seed:curriculum": "node src/seed/sync-curriculum-content.js",
+    "db:migrate:atlas": "node scripts/migrate-local-to-atlas.js",
     "readiness:test-tools": "node scripts/readiness-test-tools.js",
     "test:readiness-demand": "node --test test/marketDemand.service.test.js",
     "test": "node --test"

@@ -58,7 +58,7 @@ const env = {
   },
 
   db: {
-    uri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/youth_employment_sgap',
+    uri: process.env.MONGODB_URI || '',
     options: {
       serverSelectionTimeoutMS: 10000,
       maxPoolSize: 20,
