@@ -2265,3 +2265,98 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
   .workspace-shell .student-overview-grid > .panel { padding: 15px; }
   .workspace-shell .empty-state { min-height: 190px; padding: 24px 16px; }
 }
+
+/* Chat assistant: clearer message hierarchy and a more comfortable reading size. */
+.assistant-panel {
+  width: min(448px, calc(100vw - 32px));
+  height: min(680px, calc(100dvh - 104px));
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 28px 84px rgba(12, 29, 33, .3), 0 3px 12px rgba(12, 29, 33, .1);
+}
+.assistant-header {
+  min-height: 72px;
+  padding: 13px 15px;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--accent-soft) 48%, var(--surface)), var(--surface) 68%);
+}
+.assistant-brand-icon { width: 40px; height: 40px; border-radius: 13px; }
+.assistant-heading strong { font-size: 14px; letter-spacing: -.02em; }
+.assistant-heading span { font-size: 10px; }
+.assistant-new-chat { min-height: 38px; padding-inline: 10px; font-size: 10px; }
+.assistant-header-action { width: 38px; height: 38px; }
+.assistant-messages { padding: 21px 18px 18px; background: var(--bg); }
+.assistant-welcome { padding: 38px 3px 14px; }
+.assistant-welcome-icon { width: 48px; height: 48px; margin-bottom: 16px; border: 1px solid color-mix(in srgb, var(--accent), transparent 75%); }
+.assistant-eyebrow { font-size: 9px !important; }
+.assistant-welcome h2 { font-size: 23px; }
+.assistant-welcome > p:not(.assistant-eyebrow) { font-size: 13px; line-height: 1.65; }
+.assistant-suggestions { gap: 9px; margin-top: 22px; }
+.assistant-suggestions button {
+  min-height: 48px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  background: var(--surface);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.assistant-history-heading strong { font-size: 16px; }
+.assistant-history-heading span, .assistant-history-empty, .assistant-history-error { font-size: 12px; }
+.assistant-history-item { min-height: 50px; padding: 10px 12px; }
+.assistant-history-item > span { font-size: 12px; }
+.assistant-history-item > time { font-size: 10px; }
+.assistant-message { gap: 9px; margin-bottom: 17px; }
+.assistant-message-icon { width: 30px; height: 30px; border: 1px solid color-mix(in srgb, var(--accent), transparent 78%); border-radius: 10px; }
+.assistant-message-bubble {
+  max-width: min(88%, 350px);
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px 15px 15px 15px;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(12, 29, 33, .035);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.assistant-message-user .assistant-message-bubble {
+  max-width: 86%;
+  border-color: color-mix(in srgb, var(--accent), var(--line) 72%);
+  border-radius: 15px 4px 15px 15px;
+  color: var(--text);
+  background: var(--accent-soft);
+}
+.assistant-message-bubble h1, .assistant-message-bubble h2, .assistant-message-bubble h3 { font-size: 14px; }
+.assistant-typing { padding-left: 39px; font-size: 11px; }
+.assistant-typing em { font-size: 11px; }
+.assistant-composer-wrap { padding: 11px 14px 12px; }
+.assistant-composer { padding: 7px 7px 7px 14px; border-radius: 15px; }
+.assistant-composer textarea { min-height: 42px; font-size: 13px; }
+.assistant-send { width: 40px; height: 40px; border-radius: 12px; }
+.assistant-composer-hint { margin-top: 7px; font-size: 10px; }
+.assistant-privacy-note { font-size: 9px; line-height: 1.5; }
+.assistant-launcher { min-height: 52px; padding-inline: 19px; font-size: 12px; }
+.assistant-launcher-open { width: 46px; min-height: 46px; padding: 0; }
+@media (max-width: 620px) {
+  .assistant-chat-root { right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); gap: 8px; }
+  .assistant-panel { width: calc(100vw - 16px); height: min(680px, calc(100dvh - 84px)); min-height: 280px; border-radius: 18px; }
+  .assistant-header { min-height: 64px; padding: 9px 10px; gap: 7px; }
+  .assistant-brand-icon { width: 36px; height: 36px; }
+  .assistant-heading strong { font-size: 12px; }
+  .assistant-heading span { font-size: 9px; }
+  .assistant-new-chat { width: 36px; min-height: 36px; padding: 0; }
+  .assistant-new-chat span { display: none; }
+  .assistant-header-action { width: 34px; height: 34px; }
+  .assistant-messages { padding: 17px 13px 14px; }
+  .assistant-welcome { padding: 27px 2px 10px; }
+  .assistant-welcome h2 { font-size: 21px; }
+  .assistant-suggestions { margin-top: 18px; }
+  .assistant-suggestions button { min-height: 46px; font-size: 11px; }
+  .assistant-message-bubble { max-width: 90%; padding: 10px 12px; font-size: 12px; }
+  .assistant-composer-wrap { padding: 8px 9px max(9px, env(safe-area-inset-bottom)); }
+  .assistant-privacy-note { font-size: 8px; }
+  .assistant-launcher { min-height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assistant-panel, .assistant-message, .assistant-launcher:not(.assistant-launcher-open) { animation: none; }
+}
