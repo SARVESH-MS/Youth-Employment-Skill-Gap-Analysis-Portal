@@ -944,7 +944,9 @@ html.landing-page-active body::-webkit-scrollbar {
 *::-webkit-scrollbar, *::-webkit-scrollbar-track, *::-webkit-scrollbar-thumb { display: none !important; width: 0 !important; height: 0 !important; }
 .scroll-arrows { position: fixed; z-index: 85; top: 50%; right: 10px; display: grid; gap: 7px; transform: translateY(-50%); pointer-events: none; }
 .scroll-arrows-sidebar { position: absolute; z-index: 3; top: auto; right: 2px; bottom: 3px; left: auto; display: flex; flex-direction: column; gap: 5px; transform: none; }
+.scroll-arrows-auth.scroll-arrows-sidebar { position: fixed; z-index: 85; top: 50%; right: 10px; bottom: auto; left: auto; display: grid; gap: 7px; transform: translateY(-50%); }
 .scroll-arrows-sidebar .scroll-arrow { width: 27px; height: 27px; }
+.scroll-arrows-auth.scroll-arrows-sidebar .scroll-arrow { width: 36px; height: 36px; }
 .scroll-arrow { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 1px solid color-mix(in srgb, var(--line), transparent 10%); border-radius: 50%; color: var(--accent-strong); background: color-mix(in srgb, var(--surface), transparent 8%); box-shadow: 0 5px 18px rgba(14, 30, 34, .14); backdrop-filter: blur(10px); cursor: pointer; pointer-events: auto; transition: transform .2s ease, color .2s ease, background-color .2s ease, box-shadow .2s ease; }
 .scroll-arrow:hover { transform: scale(1.12); color: var(--accent-ink); background: var(--accent-soft); box-shadow: 0 8px 24px color-mix(in srgb, var(--accent), transparent 78%); }
 .scroll-arrow-up svg { animation: scroll-arrow-up-motion 1.5s ease-in-out infinite; }

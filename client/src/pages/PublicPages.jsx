@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, BookOpenCheck, Brain, BriefcaseBusiness, ChartNoAxesCombined, Check, Cloud, Code2, Compass, Database, GraduationCap, Layers3, LockKeyhole, MoveDown, ShieldCheck, Sparkles, UsersRound } from 'lucide-react';
 import api, { dataOf, errorMessage } from '../api/client';
 import { useAuth } from '../app/AuthContext';
 import BrandLogo from '../components/BrandLogo';
 import { Field, FormInput, FormSelect, Loading } from '../components/Common';
+import ScrollArrows from '../components/ScrollArrows';
 import ThemePicker from '../components/ThemePicker';
 
 const journeySteps = [
@@ -219,6 +220,7 @@ export function AuthPage({ mode = 'login' }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [values, setValues] = useState({});
+  const authPanelRef = useRef(null);
   const isRegister = mode === 'register';
 
   useEffect(() => {
@@ -260,7 +262,7 @@ export function AuthPage({ mode = 'login' }) {
     finally { setBusy(false); }
   };
 
-  return <main className="auth-shell"><div className="auth-visual"><BrandLogo className="brand-on-dark" /><div className="auth-visual-content"><div className="eyebrow">A practical path into technology</div><h1>Grow into the<br /><em>work you want.</em></h1><p>Build a skill plan that makes your next move easier to see.</p><div className="auth-quote-card"><span>“</span><p>Every project starts with one small step. Keep going, and your progress will speak for you.</p><small>THE YESGAP APPROACH</small></div></div><span className="auth-visual-foot">LEARN · PRACTICE · MOVE FORWARD</span><div className="auth-visual-shape" /></div><section className="auth-panel"><div className="auth-panel-top"><BrandLogo className="mobile-brand" /><ThemePicker compact /><span>Already have an account? <Link to="/login">Sign in</Link></span></div><div className="auth-form-wrap"><div className="eyebrow">{isRegister ? 'Create your workspace' : 'Welcome back'}</div><h2>{isRegister ? `Join as a ${role}` : 'Sign in to YESGAP'}</h2><p>{isRegister ? 'Set up a profile that grows with your work.' : 'Continue building toward your next opportunity.'}</p>
+  return <main className="auth-shell"><div className="auth-visual"><BrandLogo className="brand-on-dark" /><div className="auth-visual-content"><div className="eyebrow">A practical path into technology</div><h1>Grow into the<br /><em>work you want.</em></h1><p>Build a skill plan that makes your next move easier to see.</p><div className="auth-quote-card"><span>“</span><p>Every project starts with one small step. Keep going, and your progress will speak for you.</p><small>THE YESGAP APPROACH</small></div></div><span className="auth-visual-foot">LEARN · PRACTICE · MOVE FORWARD</span><div className="auth-visual-shape" /></div><section className="auth-panel" ref={authPanelRef}><div className="auth-panel-top"><BrandLogo className="mobile-brand" /><ThemePicker compact /><span>Already have an account? <Link to="/login">Sign in</Link></span></div><div className="auth-form-wrap"><div className="eyebrow">{isRegister ? 'Create your workspace' : 'Welcome back'}</div><h2>{isRegister ? `Join as a ${role}` : 'Sign in to YESGAP'}</h2><p>{isRegister ? 'Set up a profile that grows with your work.' : 'Continue building toward your next opportunity.'}</p>
       {isRegister && <div className="account-type-switch" role="tablist" aria-label="Account type">{['student', 'company'].map((item) => <button key={item} type="button" role="tab" aria-selected={role === item} className={role === item ? 'active' : ''} onClick={() => { setRole(item); setError(''); }}>{item === 'student' ? 'Student' : 'Company'}</button>)}</div>}
       {!isRegister && <div className="account-type-switch" role="tablist" aria-label="Sign-in role">{['student', 'company', 'admin'].map((item) => <button key={item} type="button" role="tab" aria-selected={role === item} className={role === item ? 'active' : ''} onClick={() => setRole(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}</div>}
       {loadingCatalog ? <Loading label="Loading career catalog…" /> : <form className="auth-form" onSubmit={onSubmit}>
@@ -287,5 +289,5 @@ export function AuthPage({ mode = 'login' }) {
         <button className="button button-primary button-submit" type="submit" disabled={busy}>{busy ? 'Please wait…' : isRegister ? 'Create your account' : 'Sign in'}{!busy && <ArrowRight size={17} />}</button>
         {!isRegister && <div className="demo-credentials"><LockKeyhole size={15} /><span><strong>Demo access</strong> Student: <code>demo-student-001</code> · Company: <code>demo-company-001</code> · Password: <code>yesgap@123</code></span></div>}
       </form>}
-      <div className="auth-bottom">{isRegister ? <>Already registered? <Link to="/login">Sign in instead</Link></> : <>New to YESGAP? <Link to="/register/student">Create a student profile</Link></>}</div></div><div className="auth-legal">By continuing, you agree to use the platform respectfully and keep account details private.</div></section></main>;
+      <div className="auth-bottom">{isRegister ? <>Already registered? <Link to="/login">Sign in instead</Link></> : <>New to YESGAP? <Link to="/register/student">Create a student profile</Link></>}</div></div><div className="auth-legal">By continuing, you agree to use the platform respectfully and keep account details private.</div></section><ScrollArrows targetRef={authPanelRef} className="scroll-arrows-auth" /></main>;
 }
