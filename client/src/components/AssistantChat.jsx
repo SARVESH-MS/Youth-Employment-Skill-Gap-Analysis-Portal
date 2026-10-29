@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Bot, Check, Copy, GripVertical, History, MessageCircle, MessageSquarePlus, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Bot, Check, Copy, History, MessageCircle, MessageSquarePlus, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useAuth } from '../app/AuthContext';
 import api, { errorMessage } from '../api/client';
 
@@ -567,7 +567,7 @@ export default function AssistantChat() {
       onDragStart={(event) => event.preventDefault()}
       onClick={toggleAssistant}
     >
-      {open ? <X size={22} /> : <><MessageCircle size={21} /><span>Ask YESGAP</span><GripVertical className="assistant-drag-handle" size={15} /></>}
+      {open ? <X size={20} /> : <><span className="assistant-launcher-mark"><MessageCircle size={19} /></span><span className="assistant-launcher-label">Ask <strong>YESGAP</strong></span></>}
     </button>
   </div>;
 }
