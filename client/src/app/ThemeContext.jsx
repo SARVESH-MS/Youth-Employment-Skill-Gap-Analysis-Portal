@@ -10,7 +10,7 @@ export const themeOptions = [
   { value: 'emerald', label: 'Emerald', description: 'Fresh green', color: '#24845c', previewBg: '#edf6f0', previewSurface: '#fbfefc' },
   { value: 'royal', label: 'Royal', description: 'Indigo and violet', color: '#7160c7', previewBg: '#f2f0fb', previewSurface: '#fcfbff' },
   { value: 'sunset', label: 'Sunset', description: 'Copper and cream', color: '#bb6642', previewBg: '#faf1e9', previewSurface: '#fffaf5' },
-  { value: 'graphite', label: 'Graphite', description: 'Pure monochrome', color: '#b4c0bf', previewBg: '#151515', previewSurface: '#252525' },
+  { value: 'graphite', label: 'Graphite', description: 'Charcoal with mint highlights', color: '#70c7ae', previewBg: '#151515', previewSurface: '#252525' },
 ];
 
 const themeValues = new Set(themeOptions.map((item) => item.value));
