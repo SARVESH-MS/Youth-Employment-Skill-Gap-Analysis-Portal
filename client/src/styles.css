@@ -1797,3 +1797,34 @@ html.landing-page-active body::-webkit-scrollbar {
   .yg-module-stack > .yg-portal-block:nth-child(7n + 1) { animation: yg-module-hover 9s ease-in-out infinite !important; }
   .yg-career-trail { animation-duration: 24s; }
 }
+
+/* Keep the mobile hero focused on the message while retaining the landscape as an accent. */
+@media (max-width: 680px) {
+  .yg-home .hero-wrap.yg-cinematic-hero {
+    min-height: min(920px, max(700px, 88svh));
+    padding: 96px 20px 78px;
+  }
+  .yg-home .hero-copy h1 {
+    max-width: 520px;
+    margin-top: 15px;
+    font-size: clamp(40px, 10.2vw, 56px);
+    line-height: 1.04;
+  }
+  .yg-home .hero-lede { max-width: 38ch; font-size: 13px; line-height: 1.65; }
+  .yg-home .hero-visual.yg-immersive-world { opacity: .88; }
+  .yg-home .yg-stage-vignette {
+    background: linear-gradient(180deg, rgba(17, 29, 28, .99) 0%, rgba(17, 29, 28, .97) 39%, rgba(17, 29, 28, .82) 64%, rgba(17, 29, 28, .32) 100%);
+  }
+  .yg-home .yg-stage-copy,
+  .yg-home .yg-stage-counter,
+  .yg-home .yg-scene-label { display: none; }
+  .landing-page-active .scroll-arrows:not(.scroll-arrows-sidebar) { display: none; }
+}
+
+@media (max-width: 390px) {
+  .yg-home .hero-wrap.yg-cinematic-hero { padding-right: 17px; padding-left: 17px; }
+  .yg-home .hero-actions { gap: 7px; }
+  .yg-home .hero-actions .button { padding-right: 9px; padding-left: 9px; font-size: 9px; }
+  .yg-home .hero-proof { gap: 9px; }
+  .yg-home .avatar-stack span { width: 27px; height: 27px; font-size: 8px; }
+}

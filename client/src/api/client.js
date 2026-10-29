@@ -11,9 +11,13 @@ let refreshing;
 let csrfToken = '';
 let csrfPromise;
 
-api.interceptors.request.use((request) => {
-  if (!['get', 'head', 'options'].includes((request.method || 'get').toLowerCase()) && csrfToken) {
-    request.headers['X-CSRF-Token'] = csrfToken;
+api.interceptors.request.use(async (request) => {
+  const method = (request.method || 'get').toLowerCase();
+  if (!['get', 'head', 'options'].includes(method)) {
+    // Initialize protection even when a screen sends a write before the auth
+    // provider has completed its startup request.
+    const token = await ensureCsrf();
+    request.headers['X-CSRF-Token'] = token;
   }
   return request;
 });
@@ -36,6 +40,20 @@ api.interceptors.response.use((response) => {
 }, async (error) => {
   const request = error.config;
   const isAuthRoute = request?.url?.startsWith('/auth/') || request?.url?.startsWith('auth/');
+  const isCsrfRejection = error.response?.status === 403
+    && error.response?.data?.message === 'A valid CSRF token is required for this request';
+  if (isCsrfRejection && request && !request._csrfRetried) {
+    request._csrfRetried = true;
+    try {
+      // A token can become stale when the session cookie is renewed in another
+      // tab or after a deployment. Fetch the cookie/header pair again, then
+      // retry this request once with the synchronized token.
+      await ensureCsrf(true);
+      return api(request);
+    } catch {
+      return Promise.reject(error);
+    }
+  }
   if (error.response?.status === 401 && request && !request._retried && !isAuthRoute) {
     request._retried = true;
     try {
