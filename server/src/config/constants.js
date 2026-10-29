@@ -258,6 +258,9 @@ const THEMES = Object.freeze([
   'royal',
   'sunset',
   'graphite',
+  'ocean',
+  'rose',
+  'amber',
 ]);
 
 const TEST_SET_CONFIG = Object.freeze({

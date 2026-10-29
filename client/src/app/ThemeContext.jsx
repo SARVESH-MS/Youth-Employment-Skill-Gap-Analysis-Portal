@@ -11,6 +11,9 @@ export const themeOptions = [
   { value: 'royal', label: 'Royal', description: 'Indigo violet', color: '#7160c7', previewBg: '#f2f0fb', previewSurface: '#fcfbff' },
   { value: 'sunset', label: 'Sunset', description: 'Copper cream', color: '#bb6642', previewBg: '#faf1e9', previewSurface: '#fffaf5' },
   { value: 'graphite', label: 'Graphite', description: 'Charcoal mint', color: '#70c7ae', previewBg: '#151515', previewSurface: '#252525' },
+  { value: 'ocean', label: 'Ocean', description: 'Navy aqua', color: '#45b9d0', previewBg: '#10212b', previewSurface: '#1e3944' },
+  { value: 'rose', label: 'Rose', description: 'Soft berry', color: '#ae5876', previewBg: '#f8eff3', previewSurface: '#fffbfd' },
+  { value: 'amber', label: 'Amber', description: 'Warm sand', color: '#a66b25', previewBg: '#f8f2e8', previewSurface: '#fffdf8' },
 ];
 
 const themeValues = new Set(themeOptions.map((item) => item.value));
