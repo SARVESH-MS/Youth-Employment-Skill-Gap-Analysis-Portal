@@ -1523,7 +1523,7 @@ html.landing-page-active body::-webkit-scrollbar {
 
 /* Immersive career landscape for the landing hero; the rest of the page keeps its existing layout. */
 .public-shell.yg-home { position: relative; overflow: clip; background: #f8f7f1; }
-.yg-home .public-nav.yg-overlay-nav { position: sticky; z-index: 25; top: 0; left: 0; width: 100%; max-width: none; height: 82px; margin: 0 0 -82px; padding: 0 clamp(22px, 4.6vw, 72px); border-bottom: 1px solid transparent; color: #edf2e9; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.yg-home .public-nav.yg-overlay-nav { position: sticky; z-index: 25; top: 0; left: 0; width: 100%; max-width: none; height: 82px; margin: 0 0 -82px; padding: 0 clamp(22px, 4.6vw, 72px); border-bottom: 1px solid rgba(232, 242, 231, .14); color: #edf2e9; background: color-mix(in srgb, var(--scene-bg) 84%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: background-color .18s ease, border-color .18s ease, backdrop-filter .18s ease; }
 .yg-home .public-nav-links { gap: clamp(14px, 2.2vw, 30px); color: rgba(231, 239, 230, .78); }
 .yg-home .public-nav-links a:hover { color: #a8e5c1; }
 .yg-home .public-nav-links .theme-picker-trigger { border-color: rgba(225, 238, 225, .22); color: #e4eee5; background: rgba(255, 255, 255, .06); }
@@ -1569,7 +1569,7 @@ html.landing-page-active body::-webkit-scrollbar {
 .yg-tile-top { fill: url(#ygTileTop); }.yg-tile-left { fill: url(#ygTileLeft); }.yg-tile-right { fill: url(#ygTileRight); }.yg-tile-edge { fill: none; stroke: rgba(227, 239, 222, .28); stroke-width: 1; }
 .yg-tile-tone-1 .yg-tile-top, .yg-tile-tone-1 .yg-tile-left { opacity: .84; }.yg-tile-tone-2 .yg-tile-top, .yg-tile-tone-2 .yg-tile-right { opacity: .73; }.yg-tile-tone-3 .yg-tile-top { fill: #9aa99c; opacity: .78; }
 .yg-floating-shards { fill: #85988b; opacity: .76; filter: drop-shadow(0 10px 12px rgba(6, 15, 13, .35)); animation: yg-shards-drift 8s ease-in-out infinite; }.yg-floating-shards path:nth-child(2), .yg-floating-shards path:nth-child(3) { fill: #61756a; }.yg-floating-shards path:nth-child(4) { fill: #b2c1b3; }
-.yg-stage-vignette { position: absolute; z-index: 1; inset: 0; clip-path: inset(82px 0 0); background: linear-gradient(90deg, color-mix(in srgb, var(--scene-bg) 94%, transparent) 0%, color-mix(in srgb, var(--scene-bg) 78%, transparent) 29%, color-mix(in srgb, var(--scene-bg) 14%, transparent) 58%, color-mix(in srgb, var(--scene-bg) 8%, transparent) 100%), linear-gradient(0deg, color-mix(in srgb, var(--scene-bg) 38%, transparent), transparent 24%, transparent 80%, color-mix(in srgb, var(--scene-bg) 20%, transparent)); }
+.yg-stage-vignette { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--scene-bg) 94%, transparent) 0%, color-mix(in srgb, var(--scene-bg) 78%, transparent) 29%, color-mix(in srgb, var(--scene-bg) 14%, transparent) 58%, color-mix(in srgb, var(--scene-bg) 8%, transparent) 100%), linear-gradient(0deg, color-mix(in srgb, var(--scene-bg) 38%, transparent), transparent 24%, transparent 80%, color-mix(in srgb, var(--scene-bg) 20%, transparent)); }
 .yg-stage-copy { position: absolute; z-index: 2; display: flex; flex-direction: column; gap: 10px; color: rgba(230, 240, 228, .72); font: 600 8px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .11em; text-transform: uppercase; }
 .yg-stage-copy small { color: rgba(221, 234, 219, .54); font: inherit; letter-spacing: .08em; }
 .yg-stage-copy-right { top: 125px; right: clamp(27px, 5vw, 74px); width: 180px; text-align: right; }
@@ -1613,7 +1613,7 @@ html.landing-page-active body::-webkit-scrollbar {
   .yg-home .hero-actions .button { min-height: 43px; padding: 0 12px; font-size: 10px; }
   .yg-home .hero-proof { margin-top: 19px; }
   .yg-home .hero-visual.yg-immersive-world { transform: none; }
-  .yg-stage-vignette { clip-path: inset(66px 0 0); background: linear-gradient(180deg, rgba(17, 29, 28, .92) 0%, rgba(17, 29, 28, .7) 38%, rgba(17, 29, 28, .12) 70%, rgba(17, 29, 28, .35) 100%); }
+  .yg-stage-vignette { background: linear-gradient(180deg, rgba(17, 29, 28, .92) 0%, rgba(17, 29, 28, .7) 38%, rgba(17, 29, 28, .12) 70%, rgba(17, 29, 28, .35) 100%); }
   .yg-stage-copy-right { top: auto; right: 18px; bottom: 104px; width: 140px; font-size: 6px; }
   .yg-stage-copy-bottom { display: none; }
   .yg-scene-label-html { left: 8%; bottom: 20%; }.yg-scene-label-js { top: 64%; right: 14%; }.yg-scene-label-role { top: 52%; right: 2%; }
@@ -1906,6 +1906,7 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 /* Keep the cinematic landing page in its established dark visual language while
    letting each chosen appearance noticeably recolor its atmosphere and accents. */
 .public-shell.yg-home { color: var(--scene-text); background: var(--scene-bg); }
+.yg-home .public-nav.yg-overlay-nav { border-bottom-color: color-mix(in srgb, var(--scene-accent), transparent 84%); }
 .yg-home .public-nav-links a:hover, .yg-home .mobile-signin:hover { color: var(--scene-accent); }
 .yg-home .public-nav-links .button-primary,
 .yg-home .hero-actions .button-primary,
