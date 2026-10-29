@@ -199,7 +199,7 @@ const demoStudents = async ({ domainRows, skillMap }) => {
     }
     const student = await upsertUser({
       role: 'student', username,
-      email: `student${pad(number)}@demo.yesgap.local`, phone: `919800${pad(number, 6)}`,
+      email: `student${pad(number)}@yesgap.com`, phone: `919800${pad(number, 6)}`,
       fullName: name, headline: `${domain.name} learner focused on practical product work.`,
       careerDomain: domain._id, theme: ['dark', 'light', 'midnight', 'slate'][number % 4], timezone: 'Asia/Kolkata',
       education: {
@@ -247,7 +247,7 @@ const demoCompanies = async ({ skillRows, domainRows }) => {
     const skillIds = skillRows.slice((number - 1) % 10, (number - 1) % 10 + 4).map(({ _id }) => _id);
     const company = await upsertUser({
       role: 'company', username: `demo-company-${pad(number)}`,
-      email: `company${pad(number)}@demo.yesgap.local`, phone: `919900${pad(number, 6)}`,
+      email: `company${pad(number)}@yesgap.com`, phone: `919900${pad(number, 6)}`,
       fullName: demoFullName(env.seed.studentCount + number - 1),
       companyName, memberName: demoFullName(env.seed.studentCount + number - 1),
       designation: ['Talent Partner', 'Engineering Manager', 'People Operations Lead'][number % 3],
@@ -284,7 +284,7 @@ const seedAdmins = async () => {
   await primary.save();
   const others = [];
   for (let number = 1; number <= Math.max(0, env.seed.adminCount - 1); number += 1) {
-    others.push(await upsertUser({ role: 'admin', username: `demo-admin-${pad(number, 2)}`, email: `admin${pad(number, 2)}@demo.yesgap.local`, phone: `919700${pad(number, 6)}`, fullName: `YESGAP Admin ${number}`, password: demoPassword, isSuperAdmin: false, theme: 'midnight' }));
+    others.push(await upsertUser({ role: 'admin', username: `demo-admin-${pad(number, 2)}`, email: `admin${pad(number, 2)}@yesgap.com`, phone: `919700${pad(number, 6)}`, fullName: `YESGAP Admin ${number}`, password: demoPassword, isSuperAdmin: false, theme: 'midnight' }));
   }
   return [primary, ...others];
 };

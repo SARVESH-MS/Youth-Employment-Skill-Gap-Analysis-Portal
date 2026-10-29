@@ -86,7 +86,7 @@ const env = {
   },
 
   initialAdmin: {
-    email: process.env.INITIAL_ADMIN_EMAIL || (isProduction ? '' : 'super.admin@yesgap.local'),
+    email: process.env.INITIAL_ADMIN_EMAIL || (isProduction ? '' : 'super.admin@yesgap.com'),
     username: process.env.INITIAL_ADMIN_USERNAME || (isProduction ? '' : 'superadmin'),
     phone: process.env.INITIAL_ADMIN_PHONE || (isProduction ? '' : '9000000001'),
     password: process.env.INITIAL_ADMIN_PASSWORD || (isProduction ? '' : 'ChangeMe!SuperAdmin#2026'),
