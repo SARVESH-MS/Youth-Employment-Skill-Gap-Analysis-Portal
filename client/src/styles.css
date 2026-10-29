@@ -1800,7 +1800,6 @@ html.landing-page-active body::-webkit-scrollbar {
 
 /* Keep the mobile hero focused on the message while retaining the landscape as an accent. */
 @media (max-width: 680px) {
-  .public-shell.yg-home { width: 100vw; max-width: 100vw; margin: 0; }
   .yg-home .hero-wrap.yg-cinematic-hero {
     min-height: min(920px, max(700px, 88svh));
     padding: 96px 20px 78px;
@@ -1812,7 +1811,7 @@ html.landing-page-active body::-webkit-scrollbar {
     line-height: 1.04;
   }
   .yg-home .hero-lede { max-width: 38ch; font-size: 13px; line-height: 1.65; }
-  .yg-home .hero-visual.yg-immersive-world { opacity: 1; }
+  .yg-home .hero-visual.yg-immersive-world { margin: 0; opacity: 1; }
   .yg-home .yg-stage-vignette {
     background: linear-gradient(180deg, rgba(17, 29, 28, .97) 0%, rgba(17, 29, 28, .92) 40%, rgba(17, 29, 28, .78) 54%, rgba(17, 29, 28, .32) 76%, rgba(17, 29, 28, .14) 90%, rgba(17, 29, 28, .28) 100%);
   }
