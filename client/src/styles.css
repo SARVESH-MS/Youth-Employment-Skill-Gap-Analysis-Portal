@@ -2383,3 +2383,12 @@ html, body, .workspace-shell, .sidebar, .topbar, .panel, .stat-card, .nav-link,
 @media (prefers-reduced-motion: reduce) {
   .assistant-panel, .assistant-message, .assistant-launcher:not(.assistant-launcher-open) { animation: none; }
 }
+
+.assistant-code-block { min-width: 0; max-width: 100%; margin: 10px 0 12px; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); }
+.assistant-code-toolbar { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 8px 5px 13px; border-bottom: 1px solid var(--line); color: var(--text-tertiary); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.assistant-code-toolbar > span { text-transform: uppercase; }
+.assistant-code-toolbar button { min-height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--text-secondary); background: var(--surface); cursor: pointer; font-family: inherit; font-size: 10px; font-weight: 650; line-height: 1; letter-spacing: 0; transition: border-color .16s ease, color .16s ease, background-color .16s ease; }
+.assistant-code-toolbar button:hover { border-color: var(--accent); color: var(--accent-strong); background: var(--accent-soft); }
+.assistant-code-toolbar button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent), transparent 35%); outline-offset: 2px; }
+.assistant-code-block pre { max-width: 100%; margin: 0; overflow-x: hidden; padding: 13px 14px; border: 0; border-radius: 0; background: transparent; white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; tab-size: 2; }
+.assistant-code-block pre code { padding: 0; border: 0; color: var(--text); background: transparent; white-space: inherit; overflow-wrap: anywhere; word-break: normal; }

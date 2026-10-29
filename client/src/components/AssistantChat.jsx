@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bot, History, MessageCircle, MessageSquarePlus, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Bot, Check, Copy, History, MessageCircle, MessageSquarePlus, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useAuth } from '../app/AuthContext';
 import api, { errorMessage } from '../api/client';
 
@@ -16,6 +16,48 @@ const chatDate = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
+
+function AssistantCodeBlock({ code }) {
+  const [copyState, setCopyState] = useState('idle');
+  const copyTimerRef = useRef(null);
+
+  useEffect(() => () => window.clearTimeout(copyTimerRef.current), []);
+
+  const copyCode = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = code;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand('copy');
+        textarea.remove();
+        if (!copied) throw new Error('Clipboard copy failed');
+      }
+      setCopyState('copied');
+    } catch {
+      setCopyState('failed');
+    }
+    window.clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = window.setTimeout(() => setCopyState('idle'), 1600);
+  };
+
+  return <div className="assistant-code-block">
+    <div className="assistant-code-toolbar">
+      <span>Code</span>
+      <button type="button" onClick={copyCode} aria-label={copyState === 'copied' ? 'Code copied' : 'Copy code'}>
+        {copyState === 'copied' ? <Check size={14} /> : <Copy size={14} />}
+        {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Try again' : 'Copy'}
+      </button>
+    </div>
+    <pre><code>{code}</code></pre>
+  </div>;
+}
 
 const renderInlineMarkdown = (text, prefix) => String(text).split(/(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|\*[^*\n]+\*)/g)
   .filter(Boolean)
@@ -61,7 +103,7 @@ const renderAssistantMarkdown = (content) => {
       const code = [];
       index += 1;
       while (index < lines.length && !lines[index].trim().startsWith('```')) code.push(lines[index++]);
-      blocks.push(<pre key={`code-${blocks.length}`}><code>{code.join('\n')}</code></pre>);
+      blocks.push(<AssistantCodeBlock key={`code-${blocks.length}`} code={code.join('\n')} />);
       continue;
     }
 
