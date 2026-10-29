@@ -99,6 +99,11 @@ const renderAssistantMarkdown = (content) => {
   return blocks;
 };
 
+const trimAssistantBoilerplate = (content) => String(content || '')
+  .replace(/\s*\(Note:\s*You can explore more[\s\S]*?practice modules?\s*[.!?]?\s*\)\s*/i, '\n')
+  .replace(/\s*Would you like to try modifying one of these examples,[\s\S]*$/i, '')
+  .trim();
+
 export default function AssistantChat() {
   const { user } = useAuth();
   const userId = user?._id || user?.id;
@@ -355,7 +360,7 @@ export default function AssistantChat() {
           </div>}
           {messages.map((message, index) => <article className={`assistant-message assistant-message-${message.role}`} key={`${index}-${message.role}`}>
             {message.role === 'assistant' && <span className="assistant-message-icon"><Bot size={14} /></span>}
-            <div className="assistant-message-bubble">{message.role === 'assistant' ? renderAssistantMarkdown(message.text) : message.text}</div>
+            <div className="assistant-message-bubble">{message.role === 'assistant' ? renderAssistantMarkdown(trimAssistantBoilerplate(message.text)) : message.text}</div>
           </article>)}
           {sending && <div className="assistant-typing"><span /><span /><span /><em>Thinking…</em></div>}
         </>}
