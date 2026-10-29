@@ -13,6 +13,7 @@ const {
 } = require('../models');
 const { getGridFSBucket } = require('../config/db');
 const { env } = require('../config/env');
+const { THEMES } = require('../config/constants');
 const { authenticate, requireRole, requireApprovedCompany } = require('../middleware/auth.middleware');
 const { getSkillGap } = require('../services/skillgap.service');
 const { notify, notifyAdmins } = require('../services/notification.service');
@@ -163,7 +164,7 @@ router.patch('/profile', authenticate, [
   body('fullName').optional().trim().isLength({ min: 2, max: 120 }),
   body('email').optional().trim().isEmail().normalizeEmail(),
   body('phone').optional().trim().isLength({ min: 7, max: 20 }),
-  body('theme').optional().isIn(['light', 'dark', 'midnight', 'slate', 'emerald', 'royal', 'sunset', 'graphite']),
+  body('theme').optional().isIn(THEMES),
 ], validate, asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   const allowed = req.user.role === 'company'
