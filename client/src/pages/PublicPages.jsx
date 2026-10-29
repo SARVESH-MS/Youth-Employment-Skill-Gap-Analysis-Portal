@@ -24,10 +24,6 @@ const careerDomains = [
 export function LandingPage() {
   useEffect(() => {
     document.documentElement.classList.add('landing-page-active');
-    const landingNav = document.querySelector('.yg-home .public-nav');
-    const updateLandingNav = () => landingNav?.classList.toggle('is-scrolled', window.scrollY > 24);
-    updateLandingNav();
-    window.addEventListener('scroll', updateLandingNav, { passive: true });
     const revealItems = document.querySelectorAll('.yg-reveal');
     const animatedSections = document.querySelectorAll('.yg-cinematic-hero, .yg-journey-section, .yg-domains-section, .yg-roadmap-section, .yg-employer-section, .yg-final-section');
     let observer;
@@ -52,8 +48,6 @@ export function LandingPage() {
     return () => {
       observer?.disconnect();
       sectionObserver?.disconnect();
-      window.removeEventListener('scroll', updateLandingNav);
-      landingNav?.classList.remove('is-scrolled');
       animatedSections.forEach((section) => section.classList.remove('is-in-view'));
       document.documentElement.classList.remove('landing-page-active');
     };
