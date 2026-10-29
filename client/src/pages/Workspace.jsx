@@ -47,7 +47,6 @@ export default function Workspace() {
   const skillId = section === 'skills' ? path[2] : undefined;
 
   useEffect(() => {
-    if (sidebarNavRef.current) sidebarNavRef.current.scrollTop = 0;
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
