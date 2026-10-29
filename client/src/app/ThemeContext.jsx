@@ -23,9 +23,9 @@ const ThemeContext = createContext(null);
 function readStoredTheme() {
   try {
     const stored = window.localStorage.getItem(themeStorageKey);
-    return themeValues.has(stored) ? stored : 'midnight';
+    return themeValues.has(stored) ? stored : 'dark';
   } catch {
-    return 'midnight';
+    return 'dark';
   }
 }
 

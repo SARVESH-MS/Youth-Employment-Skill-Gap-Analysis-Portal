@@ -487,7 +487,7 @@ function Profile({ user, onUserUpdated }) {
   useEffect(() => {
     const profileUser = data?.user || user;
     setValues({
-      fullName: profileUser.fullName || '', email: profileUser.email || '', phone: profileUser.phone || '', theme: profileUser.theme || 'midnight', timezone: profileUser.timezone || 'Asia/Kolkata',
+      fullName: profileUser.fullName || '', email: profileUser.email || '', phone: profileUser.phone || '', theme: profileUser.theme || 'dark', timezone: profileUser.timezone || 'Asia/Kolkata',
       headline: profileUser.headline || '', domainId: profileUser.careerDomain?._id || profileUser.careerDomain || '',
       college: profileUser.education?.undergraduate?.college || '', degree: profileUser.education?.undergraduate?.degree || '', specialization: profileUser.education?.undergraduate?.specialization || '', cgpa: profileUser.education?.undergraduate?.cgpa ?? '', startYear: profileUser.education?.undergraduate?.startYear || '', graduationYear: profileUser.education?.undergraduate?.graduationYear || '',
       companyName: profileUser.companyName || '', designation: profileUser.designation || '', industry: profileUser.industry || '', description: profileUser.description || '', website: profileUser.website || '', location: profileUser.location || '', companySize: profileUser.companySize || '', expectedCompensation: profileUser.expectedCompensation || '', expectedHires: profileUser.expectedHires || '', hiringRequirements: profileUser.hiringRequirements || '',
