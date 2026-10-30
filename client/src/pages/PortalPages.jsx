@@ -52,6 +52,24 @@ const greeting = () => {
 const initials = (name = '') => name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 const statusTone = (status) => ({ known: 'green', completed: 'green', 'in-progress': 'amber', missing: 'rose', offered: 'blue', accepted: 'green', rejected: 'rose', pending: 'amber', approved: 'green', resolved: 'green', 'in-review': 'blue' }[status] || 'neutral');
 const statusLabel = (status) => ({ 'in-progress': 'In progress', 'rejected-final': 'Not selected', offered: 'Invitation', 'next-round': 'Next round' }[status] || (status || '').replaceAll('-', ' '));
+const indiaToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const roundScheduleState = (round) => {
+  const day = String(round?.date || '').slice(0, 10);
+  const clock = String(round?.time || '').match(/^(\d{1,2}):(\d{2})/);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !clock) return 'pending';
+  const today = indiaToday();
+  if (day < today) return 'past';
+  if (day > today) return 'upcoming';
+  const scheduledAt = new Date(`${day}T${clock[1].padStart(2, '0')}:${clock[2]}:00+05:30`);
+  return scheduledAt < new Date() ? 'past' : 'upcoming';
+};
+const roundScheduleText = (round) => {
+  const state = roundScheduleState(round);
+  if (state === 'past') return `Past schedule · ${round.date} · ${round.time}`;
+  if (state === 'pending') return 'Date and time to be confirmed';
+  const time = String(round.time || '').match(/^(\d{1,2}:\d{2})(?:\s*(IST))?/i);
+  return `${round.date}${time ? ` · ${time[1]} ${time[2] || 'IST'}` : ` · ${round.time}`}`;
+};
 const auditLabel = (row) => row.targetType === 'Complaint' ? 'Complaint update' : statusLabel(row.action);
 
 export default function PortalPages({ role, section, skillId, user, onUserUpdated, onNavigate }) {
@@ -242,11 +260,55 @@ function Recruitment({ role }) {
 
 function CompanyRecruitment() {
   const { data, loading, error, reload } = useApiData('/company/applications');
-  const [roundsByApplication, setRoundsByApplication] = useState({}); const [modalFor, setModalFor] = useState(null); const [busy, setBusy] = useState(''); const [message, setMessage] = useState('');
+  const [roundsByApplication, setRoundsByApplication] = useState({}); const [modalFor, setModalFor] = useState(null); const [rescheduleRound, setRescheduleRound] = useState(null); const [busy, setBusy] = useState(''); const [message, setMessage] = useState('');
   useEffect(() => { (data || []).forEach((row) => { if (!roundsByApplication[row._id]) api.get(`/company/applications/${row._id}/rounds`).then((response) => setRoundsByApplication((current) => ({ ...current, [row._id]: dataOf(response) }))).catch(() => undefined); }); }, [data]);
   const refreshApplicationRounds = async () => { setRoundsByApplication({}); await reload(); };
   const record = async (roundId, result) => { setBusy(roundId); setMessage(''); try { await api.post(`/company/rounds/${roundId}/results`, { result, feedback: 'Thank you for taking part in this round. The company has recorded an outcome.' }); await reload(); setMessage('Round result saved and sent to the candidate inbox.'); } catch (reason) { setMessage(errorMessage(reason)); } finally { setBusy(''); } };
-  return <PageFrame className="company-recruitment-page"><SectionHeading eyebrow="CANDIDATE PIPELINE" title="Recruitment" description="Review responses, schedule flexible rounds and send outcomes through the in-portal inbox." action={<Link to="/company/candidates" className="button button-soft">Find candidates<UsersRound size={15} /></Link>} />{message && <div className="notice success-notice"><CheckCircle2 size={16} />{message}<button onClick={() => setMessage('')}><X size={14} /></button></div>}{error && <ErrorNotice message={error} onRetry={reload} />}{loading ? <Loading /> : data?.length ? <div className="recruitment-list">{data.map((application) => <article className="recruitment-card" key={application._id}><div className="recruitment-candidate"><div className="candidate-avatar candidate-avatar-small">{initials(application.student?.fullName)}</div><div><h3>{application.student?.fullName}</h3><p>{application.opportunity?.title} · {application.student?.careerDomain?.name || 'Career path'}</p></div><Badge tone={statusTone(application.status)}>{statusLabel(application.status)}</Badge></div><div className="recruitment-private"><span><ShieldCheck size={14} />Candidate privacy</span>{application.student?.email ? <><a href={`mailto:${application.student.email}`}>{application.student.email}</a><span>{application.student.phone}</span>{application.student.resume?.fileId && <a href={`${import.meta.env.VITE_API_URL || '/api'}/resumes/${application.student.resume.fileId}`} target="_blank" rel="noreferrer">Resume ↗</a>}</> : <p>Contact details unlock after the candidate accepts this opportunity.</p>}</div><div className="rounds-head"><div><strong>Recruitment rounds</strong><small>{roundsByApplication[application._id]?.length || 0} {roundsByApplication[application._id]?.length === 1 ? 'scheduled stage' : 'scheduled stages'}</small></div>{['accepted', 'in-progress'].includes(application.status) && <button className="button button-soft button-small" onClick={() => setModalFor(application)}><Plus size={14} />Schedule round</button>}</div>{roundsByApplication[application._id]?.map((round) => <div className="round-row" key={round._id}><div className="round-number">{String(round.roundNumber).padStart(2, '0')}</div><div className="round-info"><strong>{round.name}</strong><small>{statusLabel(round.type)} · {round.date || 'Date to be confirmed'} {round.time ? `· ${round.time}` : ''}</small></div><Badge tone={statusTone(round.status)}>{statusLabel(round.status)}</Badge>{round.status !== 'completed' && <div className="round-outcome-actions"><button disabled={busy === round._id} onClick={() => record(round._id, 'passed')}>Pass</button><button disabled={busy === round._id} onClick={() => record(round._id, 'failed')}>Fail</button><button disabled={busy === round._id} onClick={() => record(round._id, 'next-round')}>Next</button></div>}</div>)}</article>)}</div> : <div className="panel"><EmptyState icon={ClipboardCheck} title="Your pipeline is ready" description="Publish a role and invite candidates to begin recruitment." action={{ label: 'Find candidates', onClick: () => window.location.assign('/company/candidates') }} /></div>}{modalFor && <RoundModal application={modalFor} onClose={() => setModalFor(null)} onCreated={refreshApplicationRounds} />}</PageFrame>;
+  return <PageFrame className="company-recruitment-page">
+    <SectionHeading eyebrow="CANDIDATE PIPELINE" title="Recruitment" description="Review responses, schedule flexible rounds and send outcomes through the in-portal inbox." action={<Link to="/company/candidates" className="button button-soft">Find candidates<UsersRound size={15} /></Link>} />
+    {message && <div className="notice success-notice"><CheckCircle2 size={16} />{message}<button onClick={() => setMessage('')}><X size={14} /></button></div>}
+    {error && <ErrorNotice message={error} onRetry={reload} />}
+    {loading ? <Loading /> : data?.length ? <div className="recruitment-list">{data.map((application) => <article className="recruitment-card" key={application._id}>
+      <div className="recruitment-candidate"><div className="candidate-avatar candidate-avatar-small">{initials(application.student?.fullName)}</div><div><h3>{application.student?.fullName}</h3><p>{application.opportunity?.title} · {application.student?.careerDomain?.name || 'Career path'}</p></div><Badge tone={statusTone(application.status)}>{statusLabel(application.status)}</Badge></div>
+      <div className="recruitment-private"><span><ShieldCheck size={14} />Candidate privacy</span>{application.student?.email ? <><a href={`mailto:${application.student.email}`}>{application.student.email}</a><span>{application.student.phone}</span>{application.student.resume?.fileId && <a href={`${import.meta.env.VITE_API_URL || '/api'}/resumes/${application.student.resume.fileId}`} target="_blank" rel="noreferrer">Resume ↗</a>}</> : <p>Contact details unlock after the candidate accepts this opportunity.</p>}</div>
+      <div className="rounds-head"><div><strong>Recruitment rounds</strong><small>{roundsByApplication[application._id]?.length || 0} {roundsByApplication[application._id]?.length === 1 ? 'stage' : 'stages'}</small></div>{['accepted', 'in-progress'].includes(application.status) && <button className="button button-soft button-small" onClick={() => setModalFor(application)}><Plus size={14} />Schedule round</button>}</div>
+      {roundsByApplication[application._id]?.map((round) => {
+        const scheduleState = roundScheduleState(round);
+        const scheduleLabel = scheduleState === 'past' ? 'Needs rescheduling' : scheduleState === 'pending' ? 'Set date' : 'Reschedule';
+        return <div className="round-row" key={round._id}>
+          <div className="round-number">{String(round.roundNumber).padStart(2, '0')}</div>
+          <div className="round-info"><strong>{round.name}</strong><small>{statusLabel(round.type)} · {roundScheduleText(round)}</small></div>
+          <Badge tone={scheduleState === 'past' ? 'amber' : scheduleState === 'pending' ? 'blue' : statusTone(round.status)}>{scheduleState === 'past' ? 'Needs rescheduling' : scheduleState === 'pending' ? 'Date pending' : statusLabel(round.status)}</Badge>
+          {round.status !== 'completed' && <div className="round-outcome-actions">
+            {scheduleState !== 'upcoming' && <button disabled={busy === round._id} onClick={() => setRescheduleRound(round)}>{scheduleLabel}</button>}
+            <button disabled={busy === round._id} onClick={() => record(round._id, 'passed')}>Pass</button><button disabled={busy === round._id} onClick={() => record(round._id, 'failed')}>Fail</button><button disabled={busy === round._id} onClick={() => record(round._id, 'next-round')}>Next</button>
+          </div>}
+        </div>;
+      })}
+    </article>)}</div> : <div className="panel"><EmptyState icon={ClipboardCheck} title="Your pipeline is ready" description="Publish a role and invite candidates to begin recruitment." action={{ label: 'Find candidates', onClick: () => window.location.assign('/company/candidates') }} /></div>}
+    {modalFor && <RoundModal application={modalFor} onClose={() => setModalFor(null)} onCreated={refreshApplicationRounds} />}
+    {rescheduleRound && <RescheduleRoundModal round={rescheduleRound} onClose={() => setRescheduleRound(null)} onSaved={async () => { setRescheduleRound(null); await refreshApplicationRounds(); setMessage('The updated interview time was sent to the candidate inbox.'); }} />}
+  </PageFrame>;
+}
+
+function RescheduleRoundModal({ round, onClose, onSaved }) {
+  const scheduleIsPast = roundScheduleState(round) === 'past';
+  const [date, setDate] = useState(scheduleIsPast ? '' : String(round.date || '').slice(0, 10));
+  const [time, setTime] = useState(scheduleIsPast ? '' : String(round.time || '').match(/^(\d{1,2}:\d{2})/)?.[1] || '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const save = async (event) => {
+    event.preventDefault(); setBusy(true); setError('');
+    try { await api.patch(`/company/rounds/${round._id}/schedule`, { date, time }); await onSaved(); }
+    catch (reason) { setError(errorMessage(reason)); }
+    finally { setBusy(false); }
+  };
+  return <Modal title="Set interview schedule" onClose={onClose}><form className="modal-form" onSubmit={save}>
+    <p className="muted-note">Choose a future date and time in India Standard Time. The candidate will receive an inbox update.</p>
+    <div className="form-grid"><Field label="Date"><FormInput required type="date" min={indiaToday()} value={date} onChange={(event) => setDate(event.target.value)} /></Field><Field label="Time (IST)"><FormInput required type="time" value={time} onChange={(event) => setTime(event.target.value)} /></Field></div>
+    {error && <div className="form-alert form-alert-error">{error}</div>}
+    <div className="modal-actions"><button type="button" className="button button-quiet" onClick={onClose}>Cancel</button><button className="button button-primary" disabled={busy}>{busy ? 'Saving…' : 'Save schedule'}<ArrowRight size={15} /></button></div>
+  </form></Modal>;
 }
 
 function RoundModal({ application, onClose, onCreated }) {
@@ -319,7 +381,24 @@ function RoundModal({ application, onClose, onCreated }) {
 function StudentRecruitment() {
   const { data, loading, error, reload } = useApiData('/student/rounds'); const [attempt, setAttempt] = useState(null); const [codingSession, setCodingSession] = useState(null); const [errorAction, setErrorAction] = useState('');
   const start = async (round) => { setErrorAction(''); try { const response = await api.post(`/student/rounds/${round._id}/start`); const session = dataOf(response); if (session.codingRoundId) setCodingSession(session); else setAttempt(session); } catch (reason) { setErrorAction(errorMessage(reason)); reload(); } };
-  return <PageFrame><SectionHeading eyebrow="YOUR RECRUITMENT JOURNEY" title="Recruitment" description="See scheduled stages and outcomes from the companies you have chosen to engage with." />{error && <ErrorNotice message={error} onRetry={reload} />}{errorAction && <ErrorNotice message={errorAction} />}{loading ? <Loading /> : data?.rounds?.length ? <div className="student-round-list">{data.rounds.map((round) => { const result = data.results?.find((item) => String(item.round?._id || item.round) === String(round._id)); return <article className="student-round-card" key={round._id}><div className="round-number round-number-large">{String(round.roundNumber).padStart(2, '0')}</div><div className="student-round-main"><div className="round-topline"><Badge tone="blue">{round.company?.companyName}</Badge><Badge tone={statusTone(result?.result || round.status)}>{statusLabel(result?.result || round.status)}</Badge></div><h3>{round.name}</h3><p>{round.opportunity?.title} · {statusLabel(round.type)} · {round.date || 'Date to be confirmed'} {round.time ? `· ${round.time}` : ''}</p>{round.instructions && <div className="round-instructions">{round.instructions}</div>}{round.meetingLink && <a className="text-link" href={round.meetingLink} target="_blank" rel="noreferrer">Open meeting link<ArrowUpRight size={14} /></a>}{result && <div className="round-feedback"><strong>Outcome: {statusLabel(result.result)}{result.score !== undefined ? ` · ${result.score}%` : ''}</strong>{result.feedback && <p>{result.feedback}</p>}</div>}</div>{!result && (round.status === 'scheduled' || (round.type === 'coding' && round.status === 'in-progress')) && ['mcq', 'coding', 'custom-assessment'].includes(round.type) && <button className="button button-primary button-small" onClick={() => start(round)}>{round.type === 'coding' ? round.status === 'in-progress' ? 'Resume coding challenge' : 'Start coding challenge' : 'Start assessment'}<ArrowRight size={14} /></button>}</article>; })}</div> : <div className="panel"><EmptyState icon={ClipboardCheck} title="No rounds scheduled yet" description="When you accept an opportunity, its recruitment stages will appear here." action={{ label: 'View opportunities', onClick: () => window.location.assign('/student/opportunities') }} /></div>}{attempt && <Suspense fallback={<Loading label="Opening assessment?" />}><AssessmentRunner attempt={attempt} onClose={() => { setAttempt(null); reload(); }} /></Suspense>}{codingSession && <Suspense fallback={<Loading label="Opening coding challenge?" />}><CodingRoundRunner session={codingSession} onClose={() => { setCodingSession(null); reload(); }} /></Suspense>}</PageFrame>;
+  return <PageFrame><SectionHeading eyebrow="YOUR RECRUITMENT JOURNEY" title="Recruitment" description="See scheduled stages and outcomes from the companies you have chosen to engage with." />{error && <ErrorNotice message={error} onRetry={reload} />}{errorAction && <ErrorNotice message={errorAction} />}{loading ? <Loading /> : data?.rounds?.length ? <div className="student-round-list">{data.rounds.map((round) => {
+    const result = data.results?.find((item) => String(item.round?._id || item.round) === String(round._id));
+    const scheduleState = roundScheduleState(round);
+    const status = result?.result || round.status;
+    const scheduleBadge = scheduleState === 'past' && !result ? 'Needs rescheduling' : scheduleState === 'pending' && !result ? 'Date to be confirmed' : statusLabel(status);
+    const scheduleTone = scheduleState === 'past' && !result ? 'amber' : scheduleState === 'pending' && !result ? 'blue' : statusTone(status);
+    return <article className="student-round-card" key={round._id}>
+      <div className="round-number round-number-large">{String(round.roundNumber).padStart(2, '0')}</div>
+      <div className="student-round-main"><div className="round-topline"><Badge tone="blue">{round.company?.companyName}</Badge><Badge tone={scheduleTone}>{scheduleBadge}</Badge></div>
+        <h3>{round.name}</h3><p>{round.opportunity?.title} · {statusLabel(round.type)} · {roundScheduleText(round)}</p>
+        {scheduleState === 'past' && !result && <div className="round-feedback">This interview time has passed. Please contact the company to arrange a new time.</div>}
+        {round.instructions && <div className="round-instructions">{round.instructions}</div>}
+        {round.meetingLink && <a className="text-link" href={round.meetingLink} target="_blank" rel="noreferrer">Open meeting link<ArrowUpRight size={14} /></a>}
+        {result && <div className="round-feedback"><strong>Outcome: {statusLabel(result.result)}{result.score !== undefined ? ` · ${result.score}%` : ''}</strong>{result.feedback && <p>{result.feedback}</p>}</div>}
+      </div>
+      {!result && scheduleState !== 'past' && (round.status === 'scheduled' || (round.type === 'coding' && round.status === 'in-progress')) && ['mcq', 'coding', 'custom-assessment'].includes(round.type) && <button className="button button-primary button-small" onClick={() => start(round)}>{round.type === 'coding' ? round.status === 'in-progress' ? 'Resume coding challenge' : 'Start coding challenge' : 'Start assessment'}<ArrowRight size={14} /></button>}
+    </article>;
+  })}</div> : <div className="panel"><EmptyState icon={ClipboardCheck} title="No rounds scheduled yet" description="When you accept an opportunity, its recruitment stages will appear here." action={{ label: 'View opportunities', onClick: () => window.location.assign('/student/opportunities') }} /></div>}{attempt && <Suspense fallback={<Loading label="Opening assessment…" />}><AssessmentRunner attempt={attempt} onClose={() => { setAttempt(null); reload(); }} /></Suspense>}{codingSession && <Suspense fallback={<Loading label="Opening coding challenge…" />}><CodingRoundRunner session={codingSession} onClose={() => { setCodingSession(null); reload(); }} /></Suspense>}</PageFrame>;
 }
 
 function AssessmentResults() {

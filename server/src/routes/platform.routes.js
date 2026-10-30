@@ -26,6 +26,7 @@ const ApiError = require('../utils/ApiError');
 const { parsePagination, parseSort } = require('../utils/pagination');
 const { buildPaginationMeta } = require('../utils/apiResponse');
 const { tokenSearchFilter } = require('../utils/search');
+const { localDay } = require('../utils/timezone');
 
 const router = express.Router();
 const resumeUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: env.resume.maxFileSizeMb * 1024 * 1024, files: 1 } });
@@ -38,6 +39,25 @@ const studentOnly = [authenticate, requireRole('student')];
 const companyOnly = [authenticate, requireRole('company'), requireApprovedCompany];
 const adminOnly = [authenticate, requireRole('admin')];
 const candidateSummary = (user) => user.toPublicProfile();
+const isPastRoundSchedule = (date, time, now = new Date()) => {
+  const day = String(date || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  const today = localDay(now, 'Asia/Kolkata');
+  if (day < today) return true;
+  if (day > today || !time) return false;
+  const clock = String(time).match(/^(\d{1,2}):(\d{2})/);
+  if (!clock) return false;
+  const scheduledAt = new Date(`${day}T${clock[1].padStart(2, '0')}:${clock[2]}:00+05:30`);
+  return !Number.isNaN(scheduledAt.getTime()) && scheduledAt < now;
+};
+const validateFutureRoundSchedule = (date, time) => {
+  if (!date && !time) return;
+  if (!date || !time) throw ApiError.badRequest('Enter both a date and time to schedule this stage.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date)) || !/^\d{2}:\d{2}$/.test(String(time))) {
+    throw ApiError.badRequest('Enter a valid date and time.');
+  }
+  if (isPastRoundSchedule(date, time)) throw ApiError.badRequest('Choose a future date and time (IST).');
+};
 const skillProjection = 'name slug shortDescription category difficulty executionType supportedLanguages about';
 const getRecommendedModules = async (domainId) => {
   const filter = { isPublished: true };
@@ -763,6 +783,23 @@ router.get('/company/applications/:id/rounds', ...companyOnly, asyncHandler(asyn
   const data = await RecruitmentRound.find({ application: application._id }).populate('testSet', 'title difficulty questionCount durationMinutes').populate('skill', 'name slug').sort({ roundNumber: 1 });
   res.json({ success: true, data });
 }));
+router.patch('/company/rounds/:id/schedule', ...companyOnly, [
+  body('date').matches(/^\d{4}-\d{2}-\d{2}$/), body('time').matches(/^\d{2}:\d{2}$/),
+], validate, asyncHandler(async (req, res) => {
+  validateFutureRoundSchedule(req.body.date, req.body.time);
+  const round = await RecruitmentRound.findOne({ _id: req.params.id, company: req.user._id });
+  if (!round || ['completed', 'cancelled'].includes(round.status)) throw ApiError.notFound('Active recruitment round not found');
+  round.date = req.body.date;
+  round.time = `${req.body.time} IST`;
+  round.status = 'scheduled';
+  round.updatedBy = req.user._id;
+  await round.save();
+  const application = await Application.findById(round.application).populate('opportunity', 'title');
+  if (application) {
+    await notify(application.student, 'round-scheduled', `${round.name} schedule updated`, `${round.name} for ${application.opportunity?.title || 'your opportunity'} is scheduled for ${round.date} at ${req.body.time} IST.`, { link: '/student/recruitment', meta: { roundId: String(round._id), applicationId: String(application._id) }, actor: req.user._id, priority: 'high' });
+  }
+  res.json({ success: true, data: round });
+}));
 router.get('/company/assessment-sets/:skillId', ...companyOnly, asyncHandler(async (req, res) => {
   const skill = await Skill.findOne({ _id: req.params.skillId, isActive: true });
   if (!skill) throw ApiError.notFound('Skill not found');
@@ -794,8 +831,10 @@ router.post('/company/question-bank', ...companyOnly, [
 }));
 router.post('/company/applications/:id/rounds', ...companyOnly, [
   body('name').trim().isLength({ min: 2, max: 200 }), body('type').isIn(['mcq', 'coding', 'technical', 'face-to-face', 'video-interview', 'custom-assessment']),
+  body('date').optional({ values: 'falsy' }).matches(/^\d{4}-\d{2}-\d{2}$/), body('time').optional({ values: 'falsy' }).matches(/^\d{2}:\d{2}$/),
   body('testSetId').optional().isMongoId(), body('skillId').optional().isMongoId(), body('codingQuestionId').optional().isMongoId(), body('questionItems').optional().isArray({ min: 1, max: 100 }),
 ], validate, asyncHandler(async (req, res) => {
+  validateFutureRoundSchedule(req.body.date, req.body.time);
   const application = await Application.findOne({ _id: req.params.id, company: req.user._id }).populate('opportunity');
   if (!application) throw ApiError.notFound('Recruitment application not found');
   if (!['accepted', 'in-progress'].includes(application.status)) throw ApiError.badRequest('The candidate must accept before rounds can be scheduled');
@@ -884,6 +923,7 @@ router.post('/company/opportunities/:id/send', ...companyOnly, [body('studentId'
   application = await Application.create({ opportunity: opportunity._id, company: req.user._id, student: student._id, status: 'offered', timeline: [{ status: 'offered', actor: req.user._id }] });
   if (opportunity.firstRound?.name) {
     const first = opportunity.firstRound.toObject ? opportunity.firstRound.toObject() : opportunity.firstRound;
+    const expiredTemplateSchedule = isPastRoundSchedule(first.date, first.time);
     let testSet;
     if (['mcq', 'custom-assessment'].includes(first.type)) {
       testSet = await TestSet.findOne({ skill: opportunity.requiredSkills[0], difficulty: 'beginner', isActive: true }).sort({ setNumber: 1 });
@@ -891,7 +931,7 @@ router.post('/company/opportunities/:id/send', ...companyOnly, [body('studentId'
     const round = await RecruitmentRound.create({
       company: req.user._id, opportunity: opportunity._id, application: application._id,
       roundNumber: 1, name: first.name || 'Round 1', type: first.type || 'technical',
-      date: first.date, time: first.time, durationMinutes: first.durationMinutes,
+      date: expiredTemplateSchedule ? undefined : first.date, time: expiredTemplateSchedule ? undefined : first.time, durationMinutes: first.durationMinutes,
       instructions: first.instructions, status: 'scheduled', createdBy: req.user._id,
       skill: opportunity.requiredSkills[0], testSet: testSet?._id,
     });
