@@ -831,8 +831,9 @@ router.post('/company/question-bank', ...companyOnly, [
 }));
 router.post('/company/applications/:id/rounds', ...companyOnly, [
   body('name').trim().isLength({ min: 2, max: 200 }), body('type').isIn(['mcq', 'coding', 'technical', 'face-to-face', 'video-interview', 'custom-assessment']),
-  body('date').optional({ values: 'falsy' }).matches(/^\d{4}-\d{2}-\d{2}$/), body('time').optional({ values: 'falsy' }).matches(/^\d{2}:\d{2}$/),
-  body('testSetId').optional().isMongoId(), body('skillId').optional().isMongoId(), body('codingQuestionId').optional().isMongoId(), body('questionItems').optional().isArray({ min: 1, max: 100 }),
+  body('date').optional({ values: 'falsy' }).matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Enter a valid round date.'),
+  body('time').optional({ values: 'falsy' }).matches(/^\d{2}:\d{2}$/).withMessage('Enter a valid round time.'),
+  body('testSetId').optional({ values: 'falsy' }).isMongoId(), body('skillId').optional({ values: 'falsy' }).isMongoId(), body('codingQuestionId').optional({ values: 'falsy' }).isMongoId(), body('questionItems').optional({ values: 'falsy' }).isArray({ min: 1, max: 100 }),
 ], validate, asyncHandler(async (req, res) => {
   validateFutureRoundSchedule(req.body.date, req.body.time);
   const application = await Application.findOne({ _id: req.params.id, company: req.user._id }).populate('opportunity');

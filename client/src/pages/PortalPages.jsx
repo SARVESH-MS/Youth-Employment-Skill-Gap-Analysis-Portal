@@ -345,6 +345,8 @@ function RoundModal({ application, onClose, onCreated }) {
   };
   const submit = async (event) => {
     event.preventDefault(); setBusy(true); setError('');
+    if (Boolean(values.date) !== Boolean(values.time)) { setError('Enter both a date and time, or leave both blank until they are confirmed.'); setBusy(false); return; }
+    if (values.date && roundScheduleState({ date: values.date, time: values.time }) === 'past') { setError('Choose a future date and time in IST.'); setBusy(false); return; }
     if (values.type === 'coding' && !values.codingQuestionId) { setError('Choose a coding challenge for this round.'); setBusy(false); return; }
     if (['mcq', 'custom-assessment'].includes(values.type) && source === 'bank' && !selectedQuestionIds.length) { setError('Choose at least one question for this round.'); setBusy(false); return; }
     try {
@@ -363,7 +365,7 @@ function RoundModal({ application, onClose, onCreated }) {
   return <Modal title={`Schedule a round · ${application.student?.fullName}`} onClose={onClose}><form className="modal-form" onSubmit={submit}>
     <Field label="Round name"><FormInput required name="name" value={values.name} onChange={update} placeholder="Technical conversation" /></Field>
     <div className="form-grid"><Field label="Round type"><FormSelect name="type" value={values.type} onChange={update}><option value="technical">Technical conversation</option><option value="mcq">Multiple choice assessment</option><option value="coding">Coding assessment</option><option value="face-to-face">Face-to-face interview</option><option value="video-interview">Video interview</option><option value="custom-assessment">Custom assessment</option></FormSelect></Field><Field label="Duration (minutes)"><FormInput type="number" min="1" max="600" name="durationMinutes" value={values.durationMinutes} onChange={update} /></Field></div>
-    <div className="form-grid"><Field label="Date"><FormInput type="date" name="date" value={values.date} onChange={update} /></Field><Field label="Time"><FormInput type="time" name="time" value={values.time} onChange={update} /></Field></div>
+    <div className="form-grid"><Field label="Date"><FormInput type="date" min={indiaToday()} name="date" value={values.date} onChange={update} /></Field><Field label="Time (IST)"><FormInput type="time" name="time" value={values.time} onChange={update} /></Field></div>
     {(assessmentType || codingType) && <Field label="Assessment skill"><FormSelect name="skillId" value={values.skillId} onChange={update}><option value="">Choose a skill</option>{(skills || []).map((skill) => <option key={skill._id} value={skill._id}>{skill.name}</option>)}</FormSelect></Field>}
     {codingType && <Field label="Coding challenge"><FormSelect name="codingQuestionId" value={values.codingQuestionId || ''} onChange={update}><option value="">Choose a published coding challenge</option>{codingQuestions.map((question) => <option value={question._id} key={question._id}>{question.title} · {question.difficulty}{question.topic ? ` · ${question.topic}` : ''}</option>)}</FormSelect>{values.skillId && !codingQuestions.length && <small className="field-hint">No challenge is published for this skill yet. An admin can add one in Coding Problems.</small>}</Field>}
     {assessmentType && <>
